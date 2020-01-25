@@ -17,9 +17,9 @@ Macros
 ------
 
 The literate source files consist of LaTeX documentation.  Macros can be
-defined using the `<<name>>=` ... `@` block directive.  Within this directive,
-the name can be further broken down into special directives, such as the
-standard `*` name indicating the root of a single source file which must be
+defined using the `<<name>>=` ... `>>@<<` block directive.  Within this
+directive, the name can be further broken down into special directives, such as
+the standard `*` name indicating the root of a single source file which must be
 named when weaving, or `file:path` which can be used to represent a file name at
 the given path.
 
@@ -36,14 +36,14 @@ the parser to read a value from the key-value pair matching the given name. To
 resolve the key-value pair matching, a section directive is used to match
 outputs from an external program to text substitutions within this section
 directive.  The section directive is defined using a section macro, which takes
-the form of a `<<SECTION:name>>=` .. `@` block structure.  Unlike normal macros,
-these are woven back into the original document as a direct splice of whatever
-results from the text substitution, instead of as syntax highlighted source
-code. This is useful for writing the inputs for unit tests as tables within the
-documentation, so that the results of these tests can be woven back into the
-documentation as a tabular view.
+the form of a `<<SECTION:name>>=` .. `>>@<<` block structure.  Unlike normal
+macros, these are woven back into the original document as a direct splice of
+whatever results from the text substitution, instead of as syntax highlighted
+source code. This is useful for writing the inputs for unit tests as tables
+within the documentation, so that the results of these tests can be woven back
+into the documentation as a tabular view.
 
-A special form of the text substitution directive, `%[name=value]` can be used
+A special form of the text substitution directive, `%[name=value]%` can be used
 to define a key-value pair that can be extracted via minextract.  The minextract
 program searches for auto sections of a given name, and extracts all of the
 key-value pairs defined in that auto section.
