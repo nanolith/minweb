@@ -164,7 +164,7 @@ static int weave(
 
     /* write the macro references in the document. */
     auto macro_ref_callback = [&](const string& mn) {
-        (*out) << "(*@ \\begin{verbatim}<<" << mn << ">>\\end{verbatim} @*)";
+        (*out) << "(*@\\verb/<<" << mn << ">>/@*)";
     };
 
     /* run the processor. */
