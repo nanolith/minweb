@@ -99,7 +99,7 @@ static int weave(const string& input, shared_ptr<string> output_file)
 
     /* handle preamble. */
     (*out) << "\\lstset{" << endl
-           << "    escapeinside={(((*}{*)))}" << endl
+           << "    escapeinside={(*@}{@*)}" << endl
            << "}" << endl << endl;
 
     /* write passthrough data. */
@@ -145,7 +145,7 @@ static int weave(const string& input, shared_ptr<string> output_file)
 
     /* write the macro references in the document. */
     auto macro_ref_callback = [&](const string& mn) {
-        (*out) << "(((*\\emph{<<" << mn << ">>}*)))";
+        (*out) << "(*@ \\begin{verbatim}<<" << mn << ">>\\end{verbatim} @*)";
     };
 
     /* run the processor. */
