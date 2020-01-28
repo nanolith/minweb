@@ -17,12 +17,15 @@
 using namespace minweb;
 using namespace std;
 
-static int weave(const string& input, shared_ptr<string> output_file);
+static int weave(
+    const string& input, shared_ptr<string> output_file,
+    shared_ptr<string> source_language);
 
 int main(int argc, char* argv[])
 {
     int ch;
     shared_ptr<string> output_file;
+    shared_ptr<string> source_language;
 
     /* reset the option indicator. */
     optind = 0;
@@ -31,13 +34,18 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "o:")) != -1)
+    while ((ch = getopt(argc, argv, "o:L:")) != -1)
     {
         switch (ch)
         {
             /* specify the output file. */
             case 'o':
                 output_file = make_shared<string>(optarg);
+                break;
+
+            /* specify source language. */
+            case 'L':
+                source_language = make_shared<string>(optarg);
                 break;
         }
     }
@@ -54,14 +62,16 @@ int main(int argc, char* argv[])
     }
 
     /* run the weave command. */
-    return weave(argv[0], output_file);
+    return weave(argv[0], output_file, source_language);
 }
 
 typedef map<string, shared_ptr<stringstream>> macro_map;
 typedef map<string, string> setting_map;
 typedef map<string, shared_ptr<setting_map>> section_map;
 
-static int weave(const string& input, shared_ptr<string> output_file)
+static int weave(
+    const string& input, shared_ptr<string> output_file,
+    shared_ptr<string> source_language)
 {
     ostream* out;
 
@@ -99,8 +109,17 @@ static int weave(const string& input, shared_ptr<string> output_file)
 
     /* handle preamble. */
     (*out) << "\\lstset{" << endl
-           << "    escapeinside={(*@}{@*)}" << endl
-           << "}" << endl << endl;
+           << "    escapeinside={(*@}{@*)}";
+    if (!!source_language)
+    {
+        (*out) << "," << endl;
+        (*out) << "    language=" << *source_language << endl;
+    }
+    else
+    {
+        (*out) << endl;
+    }
+    (*out) << "}" << endl << endl;
 
     /* write passthrough data. */
     auto passthrough_callback = [&](const string& s) {
