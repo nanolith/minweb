@@ -151,7 +151,8 @@ static int weave(
     auto macro_end_callback = [&]() {
         out = &outfile;
 
-        (*out) << "\\begin{lstlisting}";
+        (*out) << "\\begin{lstlisting}" << endl
+               << "(*@\\verb`<<" << macro_name << ">>=`@*)";
 
         auto f = macros.find(macro_name);
         if (f != macros.end())
@@ -159,12 +160,13 @@ static int weave(
             (*out) << f->second->str();
         }
 
-        (*out) << "\\end{lstlisting}";
+        (*out) << "(*@\\verb`>>@<<`@*)" << endl
+               << "\\end{lstlisting}";
     };
 
     /* write the macro references in the document. */
     auto macro_ref_callback = [&](const string& mn) {
-        (*out) << "(*@\\verb/<<" << mn << ">>/@*)";
+        (*out) << "(*@\\verb`<<" << mn << ">>`@*)";
     };
 
     /* run the processor. */
