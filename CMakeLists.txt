@@ -1,3 +1,4 @@
+cmake_policy(SET CMP0048 NEW)
 PROJECT(minweb VERSION 0.1)
 
 cmake_minimum_required(VERSION 3.10)
@@ -44,7 +45,7 @@ TARGET_LINK_LIBRARIES(mintangle PRIVATE minweb)
 SET(MINWEB_PC "${CMAKE_BINARY_DIR}/minweb.pc")
 FILE(WRITE  ${MINWEB_PC} "Name: minweb")
 FILE(APPEND ${MINWEB_PC} "\nDescription: minweb literate programming system")
-FILE(APPEND ${MINWEB_PC} "\nVersion: 0.1")
+FILE(APPEND ${MINWEB_PC} "\nVersion: ${CMAKE_PROJECT_VERSION}")
 FILE(APPEND ${MINWEB_PC} "\nURL: https://github.com/nanolith/minweb")
 FILE(APPEND ${MINWEB_PC} "\nprefix=${CMAKE_INSTALL_PREFIX}")
 FILE(APPEND ${MINWEB_PC} "\nlibdir=\${prefix}/lib")
