@@ -98,6 +98,7 @@ static int weave(
     {
         cerr << "error: file '" << *output_file << "' could not be opened."
              << endl;
+        return 1;
     }
 
     /* "globals" for weaver callbacks. */
