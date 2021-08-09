@@ -20,9 +20,12 @@ using namespace std;
 static int tangle(
     const string& input, shared_ptr<string> output_file,
     shared_ptr<string> root);
+static int list_files(
+    const string& input);
 
 int main(int argc, char* argv[])
 {
+    bool opt_list_files = false;
     int ch;
     shared_ptr<string> output_file;
     shared_ptr<string> root;
@@ -34,10 +37,15 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "o:r:")) != -1)
+    while ((ch = getopt(argc, argv, "Lo:r:")) != -1)
     {
         switch (ch)
         {
+            /* should we list all file sections? */
+            case 'L':
+                opt_list_files = true;
+                break;
+
             /* specify the output file. */
             case 'o':
                 output_file = make_shared<string>(optarg);
@@ -59,6 +67,12 @@ int main(int argc, char* argv[])
     {
         cerr << "error: expecting exactly one filename as an argument." << endl;
         return 1;
+    }
+
+    /* should we list files? */
+    if (opt_list_files)
+    {
+        return list_files(argv[0]);
     }
 
     /* run the tangle command. */
@@ -201,6 +215,41 @@ static int tangle(
     for (auto i : *f->second.second)
     {
         outfile << i();
+    }
+
+    return 0;
+}
+
+static int list_files(
+    const string& input)
+{
+    /* open the input file. */
+    ifstream in(input);
+    if (!in.good())
+    {
+        cerr << "error: file '" << input << "' could not be opened." << endl;
+        return 1;
+    }
+
+    /* handle macro begin. */
+    auto macro_begin_callback = [&](const pair<macro_type, string>& m) {
+        if (MINWEB_MACRO_TYPE_FILE == m.first)
+        {
+            cout << m.second << endl;
+        }
+    };
+
+    /* run the processor. */
+    try
+    {
+        processor p(in);
+        p.register_macro_begin_callback(macro_begin_callback);
+        p.run();
+    }
+    catch (processor_error& e)
+    {
+        cerr << e.what() << endl;
+        return 1;
     }
 
     return 0;
