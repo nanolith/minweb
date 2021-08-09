@@ -19,13 +19,15 @@ using namespace std;
 
 static int weave(
     const string& input, shared_ptr<string> output_file,
-    shared_ptr<string> source_language);
+    shared_ptr<string> source_language,
+    shared_ptr<string> document_template);
 
 int main(int argc, char* argv[])
 {
     int ch;
     shared_ptr<string> output_file;
     shared_ptr<string> source_language;
+    shared_ptr<string> document_template;
 
     /* reset the option indicator. */
     optind = 0;
@@ -34,7 +36,7 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "o:L:")) != -1)
+    while ((ch = getopt(argc, argv, "o:L:T:")) != -1)
     {
         switch (ch)
         {
@@ -46,6 +48,11 @@ int main(int argc, char* argv[])
             /* specify source language. */
             case 'L':
                 source_language = make_shared<string>(optarg);
+                break;
+
+            /* specify template. */
+            case 'T':
+                document_template = make_shared<string>(optarg);
                 break;
         }
     }
@@ -62,7 +69,7 @@ int main(int argc, char* argv[])
     }
 
     /* run the weave command. */
-    return weave(argv[0], output_file, source_language);
+    return weave(argv[0], output_file, source_language, document_template);
 }
 
 typedef map<string, shared_ptr<stringstream>> macro_map;
@@ -72,9 +79,13 @@ typedef map<string, string> variable_map;
 
 static int weave(
     const string& input, shared_ptr<string> output_file,
-    shared_ptr<string> source_language)
+    shared_ptr<string> source_language,
+    shared_ptr<string> document_template)
 {
     ostream* out;
+    shared_ptr<ostream> outfile;
+    shared_ptr<istream> tempin;
+    ostream* preamble_out;
 
     /* open the input file. */
     ifstream in(input);
@@ -82,6 +93,18 @@ static int weave(
     {
         cerr << "error: file '" << input << "' could not be opened." << endl;
         return 1;
+    }
+
+    /* if the document template is set, open the template input file. */
+    if (!!document_template)
+    {
+        tempin = make_shared<ifstream>(*document_template);
+        if (!tempin->good())
+        {
+            cerr << "error: file '" << *document_template
+                 << "' could not be opened." << endl;
+            return 1;
+        }
     }
 
     /* if the output file is not set, make an output based on the input file
@@ -93,17 +116,26 @@ static int weave(
 
     cerr << "Writing to output '" << *output_file << "'" << endl;
 
-    /* open output file. */
-    ofstream outfile(*output_file);
-    if (!outfile.good())
+    /* if we are using the document template, then set outfile to a
+     * stringstream. */
+    if (!!document_template)
     {
-        cerr << "error: file '" << *output_file << "' could not be opened."
-             << endl;
-        return 1;
+        outfile = make_shared<stringstream>();
+    }
+    else
+    {
+        /* open output file. */
+        outfile = make_shared<ofstream>(*output_file);
+        if (!outfile->good())
+        {
+            cerr << "error: file '" << *output_file << "' could not be opened."
+                 << endl;
+            return 1;
+        }
     }
 
     /* "globals" for weaver callbacks. */
-    out = &outfile;
+    out = outfile.get();
     string current_section = "global";
     string macro_name = "";
     macro_map macros;
@@ -111,20 +143,31 @@ static int weave(
     variable_map vars;
     macro_type current_macro_type;
 
-    /* handle preamble. */
-    (*out) << "\\usepackage{xcolor}" << endl;
-    (*out) << "\\lstset{" << endl
-           << "    escapeinside={(*@}{@*)}";
-    if (!!source_language)
+    auto template_preamble_stream = make_shared<stringstream>();
+
+    if (!!document_template)
     {
-        (*out) << "," << endl;
-        (*out) << "    language=" << *source_language << endl;
+        preamble_out = template_preamble_stream.get();
     }
     else
     {
-        (*out) << endl;
+        preamble_out = out;
     }
-    (*out) << "}" << endl << endl;
+
+    /* handle preamble. */
+    (*preamble_out) << "\\usepackage{xcolor}" << endl;
+    (*preamble_out) << "\\lstset{" << endl
+                    << "    escapeinside={(*@}{@*)}";
+    if (!!source_language)
+    {
+        (*preamble_out) << "," << endl;
+        (*preamble_out) << "    language=" << *source_language << endl;
+    }
+    else
+    {
+        (*preamble_out) << endl;
+    }
+    (*preamble_out) << "}" << endl << endl;
 
     /* write passthrough data. */
     auto passthrough_callback = [&](const string& s) {
@@ -188,7 +231,7 @@ static int weave(
 
     /* emit the macro after it has been processed. */
     auto macro_end_callback = [&]() {
-        out = &outfile;
+        out = outfile.get();
 
         if (MINWEB_MACRO_TYPE_SECTION != current_macro_type)
         {
@@ -250,6 +293,48 @@ static int weave(
     {
         cerr << e.what() << endl;
         return 1;
+    }
+
+    /* if the document template is specified, run the processor over this
+     * template. */
+    if (!!document_template)
+    {
+        /* open output file. */
+        ofstream tempout(*output_file);
+        if (!tempout.good())
+        {
+            cerr << "error: file '" << *output_file << "' could not be opened."
+                 << endl;
+            return 1;
+        }
+
+        auto template_passthrough_callback = [&](const string& s) {
+            tempout << s;
+        };
+
+        auto template_ref_callback = [&](const string& mn) {
+            if ("*" == mn)
+            {
+                tempout << dynamic_cast<stringstream*>(outfile.get())->str();
+            }
+            else if ("preamble" == mn)
+            {
+                tempout << template_preamble_stream->str();
+            }
+        };
+
+        try
+        {
+            processor p(*tempin);
+            p.register_passthrough_callback(template_passthrough_callback);
+            p.register_macro_ref_callback(template_ref_callback);
+            p.run();
+        }
+        catch(processor_error& e)
+        {
+            cerr << e.what() << endl;
+            return 1;
+        }
     }
 
     return 0;

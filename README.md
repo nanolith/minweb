@@ -66,6 +66,27 @@ color or a bold face.  Depending upon the documentation language, this could
 require the use of an equal sign, such as using an HTML span with style
 information.
 
+Minweave Template
+-----------------
+
+When a template is specified with the `-T templatefilename` argument, minweave
+will write the preamble to a special macro reference called `preamble` and the
+woven document to a special macro reference called `*`.  These can be used in a
+custom template file that can provide additional LaTeX options to build a custom
+document.  For example:
+
+    Begin Template
+    
+    <<SECTION:preamble>>=
+    preamble goes here: <<preamble>>
+    >>@<<
+    
+    <<SECTION:document>>=
+    Document goes here: <<*>>
+    >>@<<
+    
+    End Template
+
 Using these tools
 -----------------
 
