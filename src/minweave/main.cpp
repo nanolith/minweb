@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
 typedef map<string, shared_ptr<stringstream>> macro_map;
 typedef map<string, string> setting_map;
 typedef map<string, shared_ptr<setting_map>> section_map;
+typedef map<string, string> variable_map;
 
 static int weave(
     const string& input, shared_ptr<string> output_file,
@@ -107,8 +108,11 @@ static int weave(
     string macro_name = "";
     macro_map macros;
     section_map sections;
+    variable_map vars;
+    macro_type current_macro_type;
 
     /* handle preamble. */
+    (*out) << "\\usepackage{xcolor}" << endl;
     (*out) << "\\lstset{" << endl
            << "    escapeinside={(*@}{@*)}";
     if (!!source_language)
@@ -146,14 +150,51 @@ static int weave(
 
         out = f->second.get();
         macro_name = m.second;
+        current_macro_type = m.first;
+
+        if (MINWEB_MACRO_TYPE_SECTION == current_macro_type)
+        {
+            auto fname = m.second + ".output";
+            auto varin = ifstream(fname);
+            if (!varin.good())
+            {
+                cerr << "Could not open " << fname << " for reading." << endl;
+                exit(1);
+            }
+
+            do
+            {
+                string varstr;
+                getline(varin, varstr);
+                if (varin.eof())
+                    break;
+
+                auto pos = varstr.find('=');
+                if (string::npos == pos)
+                {
+                    cerr << "Variable in " << fname << " malformed: " << varstr
+                         << endl;
+                    exit(1);
+                }
+
+                auto key = varstr.substr(0, pos);
+                auto value = varstr.substr(pos+1);
+
+                vars.insert(make_pair(key, value));
+
+            } while(!varin.eof());
+        }
     };
 
     /* emit the macro after it has been processed. */
     auto macro_end_callback = [&]() {
         out = &outfile;
 
-        (*out) << "\\begin{lstlisting}" << endl
-               << "(*@\\verb`<<" << macro_name << ">>=`@*)";
+        if (MINWEB_MACRO_TYPE_SECTION != current_macro_type)
+        {
+            (*out) << "\\begin{lstlisting}" << endl
+                   << "(*@\\verb`<<" << macro_name << ">>=`@*)";
+        }
 
         auto f = macros.find(macro_name);
         if (f != macros.end())
@@ -161,13 +202,37 @@ static int weave(
             (*out) << f->second->str();
         }
 
-        (*out) << "(*@\\verb`>>@<<`@*)" << endl
-               << "\\end{lstlisting}";
+        if (MINWEB_MACRO_TYPE_SECTION != current_macro_type)
+        {
+            (*out) << "(*@\\verb`>>@<<`@*)" << endl
+                   << "\\end{lstlisting}";
+        }
+
+        vars.clear();
     };
 
     /* write the macro references in the document. */
     auto macro_ref_callback = [&](const string& mn) {
         (*out) << "(*@\\verb`<<" << mn << ">>`@*)";
+    };
+
+    /* handle text substitutions in the document. */
+    auto text_substitution_callback =
+    [&](const std::tuple<substitution_type, string, string>& ts) {
+        if (MINWEB_MACRO_TYPE_SECTION == current_macro_type)
+        {
+            auto f = vars.find(get<1>(ts));
+            if (vars.end() == f)
+            {
+                (*out) << "\\textcolor{red}{"
+                       << "\\verb`\%[" << get<1>(ts) << " undefined]`"
+                       << "}";
+            }
+            else
+            {
+                (*out) << f->second;
+            }
+        }
     };
 
     /* run the processor. */
@@ -178,6 +243,7 @@ static int weave(
         p.register_macro_begin_callback(macro_begin_callback);
         p.register_macro_end_callback(macro_end_callback);
         p.register_macro_ref_callback(macro_ref_callback);
+        p.register_text_substitution_callback(text_substitution_callback);
         p.run();
     }
     catch (processor_error& e)
