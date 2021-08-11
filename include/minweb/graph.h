@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 
 namespace minweb {
 

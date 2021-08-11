@@ -15,6 +15,7 @@
 
 #include <functional>
 #include <list>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 
