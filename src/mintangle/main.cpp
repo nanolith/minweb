@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <minweb/processor.h>
+#include <set>
 #include <sstream>
 #include <unistd.h>
 
@@ -231,11 +232,14 @@ static int list_files(
         return 1;
     }
 
+    /* "globals" for the callbacks. */
+    set<string> file_sections;
+
     /* handle macro begin. */
     auto macro_begin_callback = [&](const pair<macro_type, string>& m) {
         if (MINWEB_MACRO_TYPE_FILE == m.first)
         {
-            cout << m.second << endl;
+            file_sections.insert(m.second);
         }
     };
 
@@ -250,6 +254,12 @@ static int list_files(
     {
         cerr << e.what() << endl;
         return 1;
+    }
+
+    /* finally, output the file sections. */
+    for (auto section : file_sections)
+    {
+        cout << section << endl;
     }
 
     return 0;
