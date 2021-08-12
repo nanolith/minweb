@@ -365,3 +365,29 @@ TEST(decode_macro_ref)
     auto macro = lexer::decode_macro_ref(scanner.get_token_string());
     TEST_EXPECT(string("blah") == macro);
 }
+
+/**
+ * An end of line terminates a macro reference search.
+ */
+TEST(macro_ref_endline)
+{
+    stringstream in("cat << EOF \n>>@<<");
+    lexer scanner(in);
+
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    auto passthrough = scanner.get_token_string();
+    TEST_EXPECT(string("c") == passthrough);
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    passthrough = scanner.get_token_string();
+    TEST_EXPECT(string("a") == passthrough);
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    passthrough = scanner.get_token_string();
+    TEST_EXPECT(string("t") == passthrough);
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    passthrough = scanner.get_token_string();
+    TEST_EXPECT(string(" ") == passthrough);
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    passthrough = scanner.get_token_string();
+    TEST_EXPECT(string("<< EOF \n") == passthrough);
+    TEST_ASSERT(MINWEB_TOKEN_MACRO_END == scanner.read());
+}
