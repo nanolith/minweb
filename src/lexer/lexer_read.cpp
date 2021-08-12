@@ -96,14 +96,14 @@ token minweb::lexer::maybeReadMacroStart()
 
     /* while not a '>', read... */
     ch = read_char();
-    while (ch != EOF && ch != '>')
+    while (ch != EOF && ch != '>' && ch != '\n')
     {
         accept(ch);
         ch = read_char();
     }
 
     /* handle end-of-input edge case. */
-    if (ch == EOF)
+    if (ch == EOF || ch == '\n')
         goto fail;
 
     /* accept the first gt. */
