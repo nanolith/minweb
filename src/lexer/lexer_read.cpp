@@ -38,6 +38,10 @@ token minweb::lexer::read()
             start(ch);
             return maybeReadMacroEnd();
 
+        case '#':
+            start(ch);
+            return maybeReadSpecialDirective();
+
         default:
             start(ch);
             return MINWEB_TOKEN_PASSTHROUGH;
@@ -179,6 +183,66 @@ token minweb::lexer::maybeReadTextSubstitution()
 
     /* success. */
     return MINWEB_TOKEN_TEXT_SUBSTITUTION;
+
+fail:
+    if (ch != EOF)
+        accept(ch);
+
+    return MINWEB_TOKEN_PASSTHROUGH;
+}
+
+token minweb::lexer::maybeReadSpecialDirective()
+{
+    /* match an open bracket. */
+    int ch = read_char();
+    if (ch != '[')
+        goto fail;
+    accept(ch);
+
+    /* match at least one non-equals sign. */
+    ch = read_char();
+    if (ch == EOF || ch == '=')
+        goto fail;
+    accept(ch);
+
+    /* while not a '=', read... */
+    ch = read_char();
+    while (ch != EOF && ch != '=')
+    {
+        accept(ch);
+        ch = read_char();
+    }
+
+    /* handle end-of-input edge case. */
+    if (ch == EOF)
+        goto fail;
+
+    /* accept the equals sign. */
+    accept(ch);
+
+    /* match at least one non-close-bracket. */
+    ch = read_char();
+    if (ch == EOF || ch == ']')
+        goto fail;
+    accept(ch);
+
+    /* while not a ']', read... */
+    ch = read_char();
+    while (ch != EOF && ch != ']')
+    {
+        accept(ch);
+        ch = read_char();
+    }
+
+    /* handle end-of-input edge case. */
+    if (ch == EOF)
+        goto fail;
+
+    /* accept the close bracket. */
+    accept(ch);
+
+    /* success. */
+    return MINWEB_TOKEN_SPECIAL_DIRECTIVE;
 
 fail:
     if (ch != EOF)

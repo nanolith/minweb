@@ -18,7 +18,7 @@ Macros
 
 The literate source files consist of LaTeX documentation.  Macros can be
 defined using the `<<name>>=` ... `>>@<<` block directive.  Within this
-directive, the name can be further broken down into special directives, such as
+directive, the name can be further broken down into key directives, such as
 the standard `*` name indicating the root of a single source file which must be
 named when weaving, or `file:path` which can be used to represent a file name at
 the given path.

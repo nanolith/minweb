@@ -391,3 +391,81 @@ TEST(macro_ref_endline)
     TEST_EXPECT(string("<< EOF \n") == passthrough);
     TEST_ASSERT(MINWEB_TOKEN_MACRO_END == scanner.read());
 }
+
+/**
+ * It's possible to scan a special directive.
+ */
+TEST(special_directive_include)
+{
+    stringstream in("#[include=stdio.h]");
+    lexer scanner(in);
+
+    TEST_ASSERT(MINWEB_TOKEN_SPECIAL_DIRECTIVE == scanner.read());
+    auto special = scanner.get_token_string();
+    TEST_EXPECT(string("#[include=stdio.h]") == special);
+}
+
+/**
+ * A single hash is a passthrough.
+ */
+TEST(hash_passthrough)
+{
+    stringstream in("#");
+    lexer scanner(in);
+
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    auto special = scanner.get_token_string();
+    TEST_EXPECT(string("#") == special);
+}
+
+/**
+ * #[ by itself is a passthrough.
+ */
+TEST(hash_bracket_passthrough)
+{
+    stringstream in("#[");
+    lexer scanner(in);
+
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    auto special = scanner.get_token_string();
+    TEST_EXPECT(string("#[") == special);
+}
+
+/**
+ * #[= is a passthrough.
+ */
+TEST(hash_bracket_equals_passthrough)
+{
+    stringstream in("#[=");
+    lexer scanner(in);
+
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    auto special = scanner.get_token_string();
+    TEST_EXPECT(string("#[=") == special);
+}
+
+/**
+ * #[something= is a passthrough.
+ */
+TEST(hash_bracket_something_equals_passthrough)
+{
+    stringstream in("#[xxx=");
+    lexer scanner(in);
+
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    auto special = scanner.get_token_string();
+    TEST_EXPECT(string("#[xxx=") == special);
+}
+
+/**
+ * #[something=something is a passthrough.
+ */
+TEST(hash_bracket_something_equals_something_passthrough)
+{
+    stringstream in("#[xxx=xxx");
+    lexer scanner(in);
+
+    TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
+    auto special = scanner.get_token_string();
+    TEST_EXPECT(string("#[xxx=xxx") == special);
+}
