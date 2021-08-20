@@ -66,6 +66,29 @@ color or a bold face.  Depending upon the documentation language, this could
 require the use of an equal sign, such as using an HTML span with style
 information.
 
+Special Directives
+------------------
+
+Two special directives, `#[include=filename]` and `#[language=value]` are
+supported by both minweave and mintangle.  The include directive allows document
+files to be split across multiple files.  When this directive is encountered by
+any of the tools, input will be suspended from the main file and will resume in
+the included file.  This support isn't exactly like a preprocessor include in C
+or C++.  The include file must have valid tokens, and they can't be unbalanced.
+The include path from which files are searched can be overridden with the `-I
+includepath` argument for each of the tools.
+
+The language special directive allows the default language mapping to be
+overridden for the next section.  For instance:
+
+    #[language=haskell]
+    <<FILE:test.hs>>=
+    module Main where
+    
+    <<main-function-definition>>
+    
+    >>@<<
+
 Minweave Template
 -----------------
 
