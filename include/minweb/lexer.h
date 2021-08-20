@@ -38,6 +38,8 @@ enum token
     MINWEB_TOKEN_PASSTHROUGH,
     /* A text substitution. */
     MINWEB_TOKEN_TEXT_SUBSTITUTION,
+    /* A special directive. */
+    MINWEB_TOKEN_SPECIAL_DIRECTIVE,
 };
 
 /**
@@ -186,6 +188,7 @@ private:
     token maybeReadMacroEnd();
     token maybeReadMacroStart();
     token maybeReadTextSubstitution();
+    token maybeReadSpecialDirective();
 };
 
 } /* namespace minweb */
