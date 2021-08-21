@@ -183,7 +183,7 @@ static int tangle(
     /* run the processor. */
     try
     {
-        processor p(in);
+        processor p(&in);
         p.register_passthrough_callback(passthrough_callback);
         p.register_macro_begin_callback(macro_begin_callback);
         p.register_macro_end_callback(macro_end_callback);
@@ -246,7 +246,7 @@ static int list_files(
     /* run the processor. */
     try
     {
-        processor p(in);
+        processor p(&in);
         p.register_macro_begin_callback(macro_begin_callback);
         p.run();
     }

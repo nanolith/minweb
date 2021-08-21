@@ -15,7 +15,7 @@ using namespace std;
  *
  * \param input     Input stream from which tokens are read.
  */
-minweb::lexer::lexer(std::istream& input)
+minweb::lexer::lexer(std::istream* input)
     : in(input)
     , curline(1)
     , curcol(0)

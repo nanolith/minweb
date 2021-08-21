@@ -41,7 +41,7 @@ public:
      *
      * \param input     Input stream to process.
      */
-    processor(std::istream& input);
+    processor(std::istream* input);
 
     /**
      * \brief Register a callback for passthrough data.

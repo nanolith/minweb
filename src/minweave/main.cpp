@@ -281,7 +281,7 @@ static int weave(
     /* run the processor. */
     try
     {
-        processor p(in);
+        processor p(&in);
         p.register_passthrough_callback(passthrough_callback);
         p.register_macro_begin_callback(macro_begin_callback);
         p.register_macro_end_callback(macro_end_callback);
@@ -325,7 +325,7 @@ static int weave(
 
         try
         {
-            processor p(*tempin);
+            processor p(tempin.get());
             p.register_passthrough_callback(template_passthrough_callback);
             p.register_macro_ref_callback(template_ref_callback);
             p.run();
