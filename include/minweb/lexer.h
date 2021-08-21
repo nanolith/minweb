@@ -116,6 +116,8 @@ public:
     /**
      * \brief Get the line and column information for the current token.
      *
+     * \param name              This reference is set to the name of the input
+     *                          stream.
      * \param start_line        This reference is set to the start line of the
      *                          token.
      * \param start_col         This reference is set to the start column of the
@@ -126,7 +128,8 @@ public:
      *                          token.
      */
     void read_linecol(
-        int& start_line, int& start_col, int& end_line, int& end_col) const;
+        std::string& name, int& start_line, int& start_col, int& end_line,
+        int& end_col) const;
 
     /**
      * \brief Get the current input stream, line, column, and putback buffer.
