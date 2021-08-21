@@ -102,8 +102,9 @@ public:
      * This constructor builds a lexer from an input stream reference.
      *
      * \param input     Input stream from which tokens are read.
+     * \param name      The name of the input stream.
      */
-    lexer(std::istream* input);
+    lexer(std::istream* input, const std::string& name);
 
     /**
      * \brief Read a token from the stream.
@@ -126,6 +127,37 @@ public:
      */
     void read_linecol(
         int& start_line, int& start_col, int& end_line, int& end_col) const;
+
+    /**
+     * \brief Get the current input stream, line, column, and putback buffer.
+     *
+     * \param input             Pointer to be updated with the current input
+     *                          stream, or NULL if the caller is uninterested.
+     * \param input_name        Reference to receive the name of the input
+     *                          stream.
+     * \param line              Reference to be updated with current line in the
+     *                          stream.
+     * \param col               Reference to be updated with the current column
+     *                          in the stream.
+     * \param putback           Reference to be updated with the current putback
+     *                          buffer in the stream.
+     */
+    void get_input_state(
+        std::istream** input, std::string& name, int& line, int& col,
+        std::list<int>& putback) const;
+
+    /**
+     * \brief Set the current input stream, line, column, and putback buffer.
+     *
+     * \param input             The new input stream.
+     * \param input_name        The name of the input stream.
+     * \param line              The new line.
+     * \param col               The new column.
+     * \param putback           The new putback buffer characters.
+     */
+    void set_input_state(
+        std::istream* input, const std::string& input_name, int line, int col,
+        const std::list<int>& putback);
 
     /**
      * \brief Get the string value of the current token.
@@ -190,6 +222,7 @@ public:
 
 private:
     std::istream* in;
+    std::string in_name;
     std::list<char> tokenbuf;
     std::list<int> putbackbuf;
     int curline;
