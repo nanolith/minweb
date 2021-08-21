@@ -28,7 +28,7 @@ TEST(macro_begin_end_callbacks)
             <<SECTION:bar>>=
             >>@<<
         )TEST");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_macro_begin_callback(
         [&](const pair<macro_type, string>& p) {
@@ -65,7 +65,7 @@ TEST(nested_macro_begin)
             <<SECTION:bar>>=
             >>@<<
         )TEST");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_macro_begin_callback(
         [&](const pair<macro_type, string>& p) {
@@ -99,7 +99,7 @@ TEST(missing_macro_end)
         R"TEST(
             <<SECTION:foo>>=
         )TEST");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_macro_begin_callback(
         [&](const pair<macro_type, string>& p) {
@@ -133,7 +133,7 @@ TEST(dangling_macro_end)
         R"TEST(
             >>@<<
         )TEST");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_macro_begin_callback(
         [&](const pair<macro_type, string>& p) {
@@ -169,7 +169,7 @@ TEST(macro_ref_callback)
                 <<foo>>
             >>@<<
         )TEST");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_macro_ref_callback(
         [&](const string& ref) {
@@ -197,7 +197,7 @@ TEST(dangling_macro_ref)
         R"TEST(
             <<foo>>
         )TEST");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     /* an exception should be thrown due to a dangling macro ref. */
     try
@@ -222,7 +222,7 @@ TEST(text_substitution_callback)
         R"TEST(
             %[xyzzy]%
         )TEST");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_text_substitution_callback(
         [&](const tuple<substitution_type, string, string>& s) {
@@ -251,7 +251,7 @@ TEST(passthrough_callback)
     bool passthrough_called = false;
     string data;
     stringstream in(" 123 ");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_passthrough_callback(
         [&](const string& s) {
@@ -277,7 +277,7 @@ TEST(substitution_fun)
 {
     string data;
     stringstream in("Hello, %[place]%.");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_passthrough_callback(
         [&](const string& s) {
@@ -305,7 +305,7 @@ TEST(include_special_directive_callback)
     directive_type special_type;
     string special_value;
     stringstream in("#[include=foo]");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_special_directive_callback(
         [&](const pair<directive_type, string>& d) {
@@ -332,7 +332,7 @@ TEST(language_special_directive_callback)
     directive_type special_type;
     string special_value;
     stringstream in("#[language=bar]");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     p.register_special_directive_callback(
         [&](const pair<directive_type, string>& d) {
@@ -356,7 +356,7 @@ TEST(language_special_directive_callback)
 TEST(unsupported_special_directive_callback)
 {
     stringstream in("#[pragma=something]");
-    processor p(&in);
+    processor p(&in, "test_input");
 
     /* process the stream. */
     try

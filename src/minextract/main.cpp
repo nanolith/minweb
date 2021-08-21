@@ -108,7 +108,7 @@ static int list_sections(
     /* run the processor. */
     try
     {
-        processor p(&in);
+        processor p(&in, input);
         p.register_macro_begin_callback(macro_begin_callback);
         p.run();
     }
@@ -187,7 +187,7 @@ static int extract(
     /* run the processor. */
     try
     {
-        processor p(&in);
+        processor p(&in, input);
         p.register_macro_begin_callback(macro_begin_callback);
         p.register_macro_end_callback(macro_end_callback);
         p.register_text_substitution_callback(text_substitution_callback);

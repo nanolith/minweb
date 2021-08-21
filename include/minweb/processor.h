@@ -40,8 +40,9 @@ public:
      * This constructor builds a processor from an input stream reference.
      *
      * \param input     Input stream to process.
+     * \param name      Input stream name.
      */
-    processor(std::istream* input);
+    processor(std::istream* input, const std::string& name);
 
     /**
      * \brief Register a callback for passthrough data.
