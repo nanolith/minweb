@@ -22,7 +22,7 @@ TEST_SUITE(lexer);
 TEST(eof_token)
 {
     stringstream in("");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_EOF == scanner.read());
 }
@@ -33,7 +33,7 @@ TEST(eof_token)
 TEST(lt_passthrough)
 {
     stringstream in("<");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     TEST_EXPECT("<" == scanner.get_token_string());
@@ -46,7 +46,7 @@ TEST(lt_passthrough)
 TEST(ltlt_passthrough)
 {
     stringstream in("<<");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     TEST_EXPECT("<<" == scanner.get_token_string());
@@ -59,7 +59,7 @@ TEST(ltlt_passthrough)
 TEST(ltltdot_passthrough)
 {
     stringstream in("<<.");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     TEST_EXPECT("<<." == scanner.get_token_string());
@@ -72,7 +72,7 @@ TEST(ltltdot_passthrough)
 TEST(ltltdotgt_passthrough)
 {
     stringstream in("<<.>");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     TEST_EXPECT("<<.>" == scanner.get_token_string());
@@ -86,7 +86,7 @@ TEST(macro_ref_token)
 {
     const auto s = string("<<foo>>");
     stringstream in(s);
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_MACRO_REF == scanner.read());
     TEST_EXPECT(s == scanner.get_token_string());
@@ -100,7 +100,7 @@ TEST(macro_start_token)
 {
     const auto s = string("<<foo>>=");
     stringstream in(s);
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_MACRO_START == scanner.read());
     TEST_EXPECT(s == scanner.get_token_string());
@@ -113,7 +113,7 @@ TEST(macro_start_token)
 TEST(macro_end_token)
 {
     stringstream in(">>@<<");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_MACRO_END == scanner.read());
     TEST_EXPECT(MINWEB_TOKEN_EOF == scanner.read());
@@ -125,7 +125,7 @@ TEST(macro_end_token)
 TEST(percent_passthrough)
 {
     stringstream in("%");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     TEST_EXPECT("%" == scanner.get_token_string());
@@ -138,7 +138,7 @@ TEST(percent_passthrough)
 TEST(percentbracket_passthrough)
 {
     stringstream in("%[");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     TEST_EXPECT("%[" == scanner.get_token_string());
@@ -151,7 +151,7 @@ TEST(percentbracket_passthrough)
 TEST(percentbracketdot_passthrough)
 {
     stringstream in("%[.");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     TEST_EXPECT("%[." == scanner.get_token_string());
@@ -164,7 +164,7 @@ TEST(percentbracketdot_passthrough)
 TEST(percentbracketdotbracket_passthrough)
 {
     stringstream in("%[.]");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     TEST_EXPECT("%[.]" == scanner.get_token_string());
@@ -178,7 +178,7 @@ TEST(text_substitution_macro)
 {
     const auto s = string("%[foo]%");
     stringstream in(s);
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_EXPECT(MINWEB_TOKEN_TEXT_SUBSTITUTION == scanner.read());
     TEST_EXPECT(s == scanner.get_token_string());
@@ -191,7 +191,7 @@ TEST(text_substitution_macro)
 TEST(file_macro_type)
 {
     stringstream in("<<FILE:main.c>>=");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_MACRO_START == scanner.read());
     auto macro = lexer::macro_type_from_macro_begin(scanner.get_token_string());
@@ -205,7 +205,7 @@ TEST(file_macro_type)
 TEST(section_macro_type)
 {
     stringstream in("<<SECTION:Foo Bar Baz>>=");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_MACRO_START == scanner.read());
     auto macro = lexer::macro_type_from_macro_begin(scanner.get_token_string());
@@ -219,7 +219,7 @@ TEST(section_macro_type)
 TEST(root_macro_type)
 {
     stringstream in("<<*>>=");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_MACRO_START == scanner.read());
     auto macro = lexer::macro_type_from_macro_begin(scanner.get_token_string());
@@ -233,7 +233,7 @@ TEST(root_macro_type)
 TEST(default_macro_type1)
 {
     stringstream in("<<blah>>=");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_MACRO_START == scanner.read());
     auto macro = lexer::macro_type_from_macro_begin(scanner.get_token_string());
@@ -247,7 +247,7 @@ TEST(default_macro_type1)
 TEST(default_macro_type2)
 {
     stringstream in("<<foo:bar>>=");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_MACRO_START == scanner.read());
     auto macro = lexer::macro_type_from_macro_begin(scanner.get_token_string());
@@ -293,7 +293,7 @@ TEST(macro_begin_bad_string)
 TEST(assignment_substitution)
 {
     stringstream in("%[password=xyzzy]%");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_TEXT_SUBSTITUTION == scanner.read());
     auto sub =
@@ -310,7 +310,7 @@ TEST(assignment_substitution)
 TEST(default_substitution)
 {
     stringstream in("%[xyzzy]%");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_TEXT_SUBSTITUTION == scanner.read());
     auto sub =
@@ -359,7 +359,7 @@ TEST(text_substitution_bad_string)
 TEST(decode_macro_ref)
 {
     stringstream in("<<blah>>");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_MACRO_REF == scanner.read());
     auto macro = lexer::decode_macro_ref(scanner.get_token_string());
@@ -372,7 +372,7 @@ TEST(decode_macro_ref)
 TEST(macro_ref_endline)
 {
     stringstream in("cat << EOF \n>>@<<");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     auto passthrough = scanner.get_token_string();
@@ -398,7 +398,7 @@ TEST(macro_ref_endline)
 TEST(special_directive_include)
 {
     stringstream in("#[include=stdio.h]");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_SPECIAL_DIRECTIVE == scanner.read());
     auto special = scanner.get_token_string();
@@ -411,7 +411,7 @@ TEST(special_directive_include)
 TEST(hash_passthrough)
 {
     stringstream in("#");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     auto special = scanner.get_token_string();
@@ -424,7 +424,7 @@ TEST(hash_passthrough)
 TEST(hash_bracket_passthrough)
 {
     stringstream in("#[");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     auto special = scanner.get_token_string();
@@ -437,7 +437,7 @@ TEST(hash_bracket_passthrough)
 TEST(hash_bracket_equals_passthrough)
 {
     stringstream in("#[=");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     auto special = scanner.get_token_string();
@@ -450,7 +450,7 @@ TEST(hash_bracket_equals_passthrough)
 TEST(hash_bracket_something_equals_passthrough)
 {
     stringstream in("#[xxx=");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     auto special = scanner.get_token_string();
@@ -463,7 +463,7 @@ TEST(hash_bracket_something_equals_passthrough)
 TEST(hash_bracket_something_equals_something_passthrough)
 {
     stringstream in("#[xxx=xxx");
-    lexer scanner(in);
+    lexer scanner(&in);
 
     TEST_ASSERT(MINWEB_TOKEN_PASSTHROUGH == scanner.read());
     auto special = scanner.get_token_string();

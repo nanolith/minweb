@@ -103,7 +103,7 @@ public:
      *
      * \param input     Input stream from which tokens are read.
      */
-    lexer(std::istream& input);
+    lexer(std::istream* input);
 
     /**
      * \brief Read a token from the stream.
@@ -189,7 +189,7 @@ public:
     decode_special_directive(const std::string& directive_string);
 
 private:
-    std::istream& in;
+    std::istream* in;
     std::list<char> tokenbuf;
     std::list<int> putbackbuf;
     int curline;

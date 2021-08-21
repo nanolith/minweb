@@ -15,7 +15,7 @@ using namespace std;
  *
  * \param input     Input stream to process.
  */
-minweb::processor::processor(istream& input)
+minweb::processor::processor(istream* input)
     : in(input)
 {
 }

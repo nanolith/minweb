@@ -22,7 +22,7 @@ int minweb::lexer::read_char()
     }
     else
     {
-        ch = in.get();
+        ch = in->get();
         if ('\n' == ch)
         {
             ++curline;
