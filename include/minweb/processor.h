@@ -81,6 +81,13 @@ public:
             cb);
 
     /**
+     * \brief Register a callback for a special directive.
+     */
+    void register_special_directive_callback(
+            std::function<
+                void (const std::pair<directive_type, std::string>&)> cb);
+
+    /**
      * \brief Run the macro processor.
      *
      * \throws processor_error if an error is encountered when processing this
@@ -106,6 +113,10 @@ private:
     std::function<
         void (const std::tuple<substitution_type, std::string, std::string>&)>
     text_substitution_callback;
+
+    std::function<
+        void (const std::pair<directive_type, std::string>&)>
+    special_directive_callback;
 };
 
 } /* namespace minweb */

@@ -3,7 +3,7 @@
  *
  * \brief Lexer for scanning minweb files.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 #ifndef  MINWEB_LEXER_HEADER_GUARD
 # define MINWEB_LEXER_HEADER_GUARD
@@ -66,6 +66,17 @@ enum substitution_type
     MINWEB_SUBSTITUTION_TYPE_DEFAULT,
     /** \brief An assignment substitution type. */
     MINWEB_SUBSTITUTION_TYPE_ASSIGNMENT,
+};
+
+/**
+ * \brief Directive types supported by the lexer.
+ */
+enum directive_type
+{
+    /* \brief An include directive. */
+    MINWEB_DIRECTIVE_TYPE_INCLUDE,
+    /* \brief A language directive. */
+    MINWEB_DIRECTIVE_TYPE_LANGUAGE,
 };
 
 /**
@@ -164,6 +175,18 @@ public:
      */
     static std::string
     decode_macro_ref(const std::string& macro_ref);
+
+    /**
+     * \brief Decode a special directive from a special directive token string.
+     *
+     * \param directive_string  The token string to decode.
+     *
+     * \returns the decoded special directive.
+     *
+     * \throws a lexer_error if the special directive could not be decoded.
+     */
+    static std::pair<directive_type, std::string>
+    decode_special_directive(const std::string& directive_string);
 
 private:
     std::istream& in;

@@ -3,7 +3,7 @@
  *
  * \brief Run the processor.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 #include <minweb/processor.h>
 #include <sstream>
@@ -105,6 +105,23 @@ void minweb::processor::run()
                 if (!!passthrough_callback)
                 {
                     passthrough_callback(in.get_token_string());
+                }
+                break;
+
+            case MINWEB_TOKEN_SPECIAL_DIRECTIVE:
+                try
+                {
+                    auto decoded_directive =
+                        lexer::decode_special_directive(in.get_token_string());
+
+                    if (!!special_directive_callback)
+                    {
+                        special_directive_callback(decoded_directive);
+                    }
+                }
+                catch (lexer_error& e)
+                {
+                    throw processor_error(e.what());
                 }
                 break;
 
