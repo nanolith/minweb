@@ -295,3 +295,77 @@ TEST(substitution_fun)
     /* postconditions. */
     TEST_EXPECT(string("Hello, World.") == data);
 }
+
+/**
+ * The include special directive is visible via callback.
+ */
+TEST(include_special_directive_callback)
+{
+    bool special_called = false;
+    directive_type special_type;
+    string special_value;
+    stringstream in("#[include=foo]");
+    processor p(in);
+
+    p.register_special_directive_callback(
+        [&](const pair<directive_type, string>& d) {
+            special_called = true;
+            special_type = d.first;
+            special_value = d.second;
+        });
+
+    /* process the stream. */
+    p.run();
+
+    /* postconditions. */
+    TEST_EXPECT(special_called == true);
+    TEST_EXPECT(special_type == MINWEB_DIRECTIVE_TYPE_INCLUDE);
+    TEST_EXPECT(special_value == "foo");
+}
+
+/**
+ * The language special directive is visible via callback.
+ */
+TEST(language_special_directive_callback)
+{
+    bool special_called = false;
+    directive_type special_type;
+    string special_value;
+    stringstream in("#[language=bar]");
+    processor p(in);
+
+    p.register_special_directive_callback(
+        [&](const pair<directive_type, string>& d) {
+            special_called = true;
+            special_type = d.first;
+            special_value = d.second;
+        });
+
+    /* process the stream. */
+    p.run();
+
+    /* postconditions. */
+    TEST_EXPECT(special_called == true);
+    TEST_EXPECT(special_type == MINWEB_DIRECTIVE_TYPE_LANGUAGE);
+    TEST_EXPECT(special_value == "bar");
+}
+
+/**
+ * An unsupported directive type throws an exception.
+ */
+TEST(unsupported_special_directive_callback)
+{
+    stringstream in("#[pragma=something]");
+    processor p(in);
+
+    /* process the stream. */
+    try
+    {
+        p.run();
+        TEST_FAILURE();
+    }
+    catch (processor_error& e)
+    {
+        TEST_SUCCESS();
+    }
+}
