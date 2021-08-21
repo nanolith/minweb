@@ -23,18 +23,20 @@ void minweb::processor::run()
     stringstream failout;
     int tok;
     int line, col, endline, endcol;
+    string name;
 
     do
     {
         tok = in.read();
-        in.read_linecol(line, col, endline, endcol);
+        in.read_linecol(name, line, col, endline, endcol);
 
         switch (tok)
         {
             case MINWEB_TOKEN_EOF:
                 if (in_macro)
                 {
-                    failout << "Error at " << line << ":" << col << ": ";
+                    failout << "Error in " << name << " at "
+                            << line << ":" << col << ": ";
                     failout << "Expected a macro end.";
 
                     throw processor_error(failout.str());
@@ -44,7 +46,8 @@ void minweb::processor::run()
             case MINWEB_TOKEN_MACRO_START:
                 if (in_macro)
                 {
-                    failout << "Error at " << line << ":" << col << ": ";
+                    failout << "Error in " << name << " at "
+                            << line << ":" << col << ": ";
                     failout << "Macros cannot be nested.";
 
                     throw processor_error(failout.str());
@@ -62,7 +65,8 @@ void minweb::processor::run()
             case MINWEB_TOKEN_MACRO_END:
                 if (!in_macro)
                 {
-                    failout << "Error at " << line << ":" << col << ": ";
+                    failout << "Error in " << name << " at "
+                            << line << ":" << col << ": ";
                     failout << "Macro end with no macro begin.";
 
                     throw processor_error(failout.str());
@@ -78,7 +82,8 @@ void minweb::processor::run()
             case MINWEB_TOKEN_MACRO_REF:
                 if (!in_macro)
                 {
-                    failout << "Error at " << line << ":" << col << ": ";
+                    failout << "Error in " << name << " at "
+                            << line << ":" << col << ": ";
                     failout << "Macro references can only occur in macro ";
                     failout << "bodies.";
 

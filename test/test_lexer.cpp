@@ -612,8 +612,10 @@ TEST(input_state_save_restore)
     TEST_ASSERT(string("M") == scanner.get_token_string());
 
     /* the line and column should be 1 and 1. */
+    string name;
     int start_line, start_col, end_line, end_col;
-    scanner.read_linecol(start_line, start_col, end_line, end_col);
+    scanner.read_linecol(name, start_line, start_col, end_line, end_col);
+    TEST_ASSERT(string("test_input2") == name);
     TEST_ASSERT(1 == start_line);
     TEST_ASSERT(1 == end_line);
     TEST_ASSERT(1 == start_col);
