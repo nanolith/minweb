@@ -157,6 +157,7 @@ static int weave(
     macro_type current_macro_type;
     shared_ptr<processor> p;
     stack<shared_ptr<pair<shared_ptr<ifstream>, string>>> input_stack;
+    shared_ptr<string> language_override;
 
     auto template_preamble_stream = make_shared<stringstream>();
 
@@ -250,8 +251,17 @@ static int weave(
 
         if (MINWEB_MACRO_TYPE_SECTION != current_macro_type)
         {
-            (*out) << "\\begin{lstlisting}" << endl
-                   << "(*@\\verb`<<" << macro_name << ">>=`@*)";
+            (*out) << "\\begin{lstlisting}";
+            if (!!language_override)
+            {
+                (*out) << "[language=" << *language_override << "]" << endl;
+                language_override.reset();
+            }
+            else
+            {
+                (*out) << endl;
+            }
+            (*out) << "(*@\\verb`<<" << macro_name << ">>=`@*)";
         }
 
         auto f = macros.find(macro_name);
@@ -293,11 +303,18 @@ static int weave(
         }
     };
 
+    /* handle language overrides. */
+    auto language_override_callback =
+    [&](const pair<directive_type, string>& d) {
+        if (MINWEB_DIRECTIVE_TYPE_LANGUAGE == d.first)
+        {
+            language_override = make_shared<string>(d.second);
+        }
+    };
     /* handle includes. */
     auto special_directive_callback =
         include_processor_callback(
-            &p, include_path, input_stack,
-            [&](const pair<directive_type, string>& d) { });
+            &p, include_path, input_stack, language_override_callback);
 
     /* run the processor. */
     try
