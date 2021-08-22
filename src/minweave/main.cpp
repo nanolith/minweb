@@ -3,7 +3,7 @@
  *
  * \brief Main entry point for the minweave tool.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 
 #include <fstream>
@@ -11,14 +11,17 @@
 #include <map>
 #include <memory>
 #include <minweb/processor.h>
+#include <minweb/utilities.h>
 #include <sstream>
 #include <unistd.h>
 
 using namespace minweb;
+using namespace utilities;
 using namespace std;
 
 static int weave(
-    const string& input, shared_ptr<string> output_file,
+    const string& input, const string& include_path,
+    shared_ptr<string> output_file,
     shared_ptr<string> source_language,
     shared_ptr<string> document_template);
 
@@ -28,6 +31,7 @@ int main(int argc, char* argv[])
     shared_ptr<string> output_file;
     shared_ptr<string> source_language;
     shared_ptr<string> document_template;
+    string include_path(".");
 
     /* reset the option indicator. */
     optind = 0;
@@ -36,10 +40,15 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "o:L:T:")) != -1)
+    while ((ch = getopt(argc, argv, "I:o:L:T:")) != -1)
     {
         switch (ch)
         {
+            /* specify include path. */
+            case 'I':
+                include_path = optarg;
+                break;
+
             /* specify the output file. */
             case 'o':
                 output_file = make_shared<string>(optarg);
@@ -69,7 +78,10 @@ int main(int argc, char* argv[])
     }
 
     /* run the weave command. */
-    return weave(argv[0], output_file, source_language, document_template);
+    return
+        weave(
+            argv[0], include_path, output_file, source_language,
+            document_template);
 }
 
 typedef map<string, shared_ptr<stringstream>> macro_map;
@@ -78,7 +90,8 @@ typedef map<string, shared_ptr<setting_map>> section_map;
 typedef map<string, string> variable_map;
 
 static int weave(
-    const string& input, shared_ptr<string> output_file,
+    const string& input, const string& include_path,
+    shared_ptr<string> output_file,
     shared_ptr<string> source_language,
     shared_ptr<string> document_template)
 {
@@ -142,6 +155,8 @@ static int weave(
     section_map sections;
     variable_map vars;
     macro_type current_macro_type;
+    shared_ptr<processor> p;
+    stack<shared_ptr<pair<shared_ptr<ifstream>, string>>> input_stack;
 
     auto template_preamble_stream = make_shared<stringstream>();
 
@@ -278,16 +293,23 @@ static int weave(
         }
     };
 
+    /* handle includes. */
+    auto special_directive_callback =
+        include_processor_callback(
+            &p, include_path, input_stack,
+            [&](const pair<directive_type, string>& d) { });
+
     /* run the processor. */
     try
     {
-        processor p(&in, input);
-        p.register_passthrough_callback(passthrough_callback);
-        p.register_macro_begin_callback(macro_begin_callback);
-        p.register_macro_end_callback(macro_end_callback);
-        p.register_macro_ref_callback(macro_ref_callback);
-        p.register_text_substitution_callback(text_substitution_callback);
-        p.run();
+        p = make_shared<processor>(&in, input);
+        p->register_passthrough_callback(passthrough_callback);
+        p->register_macro_begin_callback(macro_begin_callback);
+        p->register_macro_end_callback(macro_end_callback);
+        p->register_macro_ref_callback(macro_ref_callback);
+        p->register_text_substitution_callback(text_substitution_callback);
+        p->register_special_directive_callback(special_directive_callback);
+        p->run();
     }
     catch (processor_error& e)
     {
@@ -325,10 +347,15 @@ static int weave(
 
         try
         {
-            processor p(tempin.get(), *document_template);
-            p.register_passthrough_callback(template_passthrough_callback);
-            p.register_macro_ref_callback(template_ref_callback);
-            p.run();
+            /* close all previous include files. */
+            while (!input_stack.empty())
+                input_stack.pop();
+
+            p = make_shared<processor>(tempin.get(), *document_template);
+            p->register_passthrough_callback(template_passthrough_callback);
+            p->register_macro_ref_callback(template_ref_callback);
+            p->register_special_directive_callback(special_directive_callback);
+            p->run();
         }
         catch(processor_error& e)
         {

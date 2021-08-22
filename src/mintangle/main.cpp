@@ -3,7 +3,7 @@
  *
  * \brief Main entry point for the mintangle tool.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 
 #include <fstream>
