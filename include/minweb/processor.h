@@ -3,7 +3,7 @@
  *
  * \brief Pattern for running the minweb macro processor.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 #ifndef  MINWEB_PROCESSOR_HEADER_GUARD
 # define MINWEB_PROCESSOR_HEADER_GUARD
