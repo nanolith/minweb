@@ -11,24 +11,27 @@
 #include <map>
 #include <memory>
 #include <minweb/processor.h>
+#include <minweb/utilities.h>
 #include <sstream>
 #include <unistd.h>
 
 using namespace minweb;
+using namespace utilities;
 using namespace std;
 
 static int list_sections(
-    const string& input);
+    const string& input, const string& include_path);
 
 static int extract(
-    const string& input, shared_ptr<string> output_file,
-    shared_ptr<string> section_name);
+    const string& input, const string& include_path,
+    shared_ptr<string> output_file, shared_ptr<string> section_name);
 
 int main(int argc, char* argv[])
 {
     int ch;
     shared_ptr<string> output_file;
     shared_ptr<string> section_name;
+    string include_path = ".";
     bool call_list_sections = false;
 
     /* reset the option indicator. */
@@ -38,10 +41,15 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "Lo:S:")) != -1)
+    while ((ch = getopt(argc, argv, "I:Lo:S:")) != -1)
     {
         switch (ch)
         {
+            /* override the include path. */
+            case 'I':
+                include_path = optarg;
+                break;
+
             /* specify the output file. */
             case 'o':
                 output_file = make_shared<string>(optarg);
@@ -71,7 +79,7 @@ int main(int argc, char* argv[])
     /* should we list all sections? */
     if (call_list_sections)
     {
-        return list_sections(argv[0]);
+        return list_sections(argv[0], include_path);
     }
 
     /* verify that we have a section name. */
@@ -82,11 +90,11 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    return extract(argv[0], output_file, section_name);
+    return extract(argv[0], include_path, output_file, section_name);
 }
 
 static int list_sections(
-    const string& input)
+    const string& input, const string& include_path)
 {
     ostream* out = &cout;
 
@@ -98,6 +106,11 @@ static int list_sections(
         return 1;
     }
 
+    /* "globals". */
+    shared_ptr<processor> p;
+    stack<shared_ptr<pair<shared_ptr<ifstream>, string>>> input_stack;
+
+    /* handle macro begin. */
     auto macro_begin_callback = [&](const pair<macro_type, string>& m) {
         if (MINWEB_MACRO_TYPE_SECTION == m.first)
         {
@@ -105,12 +118,19 @@ static int list_sections(
         }
     };
 
+    /* handle includes. */
+    auto special_directive_callback =
+        include_processor_callback(
+            &p, include_path, input_stack,
+            [&](const pair<directive_type, string>& d) { });
+
     /* run the processor. */
     try
     {
-        processor p(&in, input);
-        p.register_macro_begin_callback(macro_begin_callback);
-        p.run();
+        p = make_shared<processor>(&in, input);
+        p->register_macro_begin_callback(macro_begin_callback);
+        p->register_special_directive_callback(special_directive_callback);
+        p->run();
     }
     catch (processor_error& e)
     {
@@ -122,8 +142,8 @@ static int list_sections(
 }
 
 static int extract(
-    const string& input, shared_ptr<string> output_file,
-    shared_ptr<string> section_name)
+    const string& input, const string& include_path,
+    shared_ptr<string> output_file, shared_ptr<string> section_name)
 {
     ostream* out;
 
@@ -156,6 +176,8 @@ static int extract(
     out = &outfile;
 
     /* "globals" for extract callbacks. */
+    shared_ptr<processor> p;
+    stack<shared_ptr<pair<shared_ptr<ifstream>, string>>> input_stack;
     bool should_write_assignment = false;
 
     /* handle the beginning of a macro. */
@@ -184,14 +206,20 @@ static int extract(
         }
     };
 
+    /* handle includes. */
+    auto special_directive_callback =
+        include_processor_callback(
+            &p, include_path, input_stack,
+            [&](const pair<directive_type, string>& d) { });
+
     /* run the processor. */
     try
     {
-        processor p(&in, input);
-        p.register_macro_begin_callback(macro_begin_callback);
-        p.register_macro_end_callback(macro_end_callback);
-        p.register_text_substitution_callback(text_substitution_callback);
-        p.run();
+        p = make_shared<processor>(&in, input);
+        p->register_macro_begin_callback(macro_begin_callback);
+        p->register_macro_end_callback(macro_end_callback);
+        p->register_text_substitution_callback(text_substitution_callback);
+        p->run();
     }
     catch (processor_error& e)
     {
