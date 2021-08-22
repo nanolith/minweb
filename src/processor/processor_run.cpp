@@ -41,6 +41,18 @@ void minweb::processor::run()
 
                     throw processor_error(failout.str());
                 }
+                else if (input_stack.size() > 0)
+                {
+                    /* restore the previous stream. */
+                    auto val = input_stack.top();
+                    in.set_input_state(
+                        val->input, val->name, val->line, val->col,
+                        val->putback);
+                    input_stack.pop();
+
+                    /* stub a dummy token to continue the loop. */
+                    tok = MINWEB_TOKEN_PASSTHROUGH;
+                }
                 break;
 
             case MINWEB_TOKEN_MACRO_START:

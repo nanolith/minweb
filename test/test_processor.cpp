@@ -369,3 +369,38 @@ TEST(unsupported_special_directive_callback)
         TEST_SUCCESS();
     }
 }
+
+/**
+ * It's possible to parse an include with a little assist from the callbacks.
+ */
+TEST(include_functionality)
+{
+    stringstream in1("#[include=test_input2]");
+    stringstream in2("X");
+    bool x_found = false;
+    processor p(&in1, "test_input");
+
+    p.register_passthrough_callback(
+        [&](const string& s) {
+            if (s == "X")
+                x_found = true;
+        });
+
+    p.register_special_directive_callback(
+        [&](const pair<directive_type, string>& d) {
+            TEST_EXPECT(d.first == MINWEB_DIRECTIVE_TYPE_INCLUDE);
+            TEST_EXPECT(d.second == "test_input2");
+
+            p.include_stream(&in2, "test_input2");
+        });
+
+    try
+    {
+        p.run();
+        TEST_EXPECT(x_found == true);
+    }
+    catch (processor_error& e)
+    {
+        TEST_FAILURE();
+    }
+}
