@@ -11,23 +11,26 @@
 #include <map>
 #include <memory>
 #include <minweb/processor.h>
+#include <minweb/utilities.h>
 #include <set>
 #include <sstream>
 #include <unistd.h>
 
 using namespace minweb;
+using namespace utilities;
 using namespace std;
 
 static int tangle(
     const string& input, shared_ptr<string> output_file,
-    shared_ptr<string> root);
+    shared_ptr<string> root, const string& include_path);
 static int list_files(
-    const string& input);
+    const string& input, const string& include_path);
 
 int main(int argc, char* argv[])
 {
     bool opt_list_files = false;
     int ch;
+    string include_path(".");
     shared_ptr<string> output_file;
     shared_ptr<string> root;
 
@@ -38,10 +41,15 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "Lo:r:")) != -1)
+    while ((ch = getopt(argc, argv, "I:Lo:r:")) != -1)
     {
         switch (ch)
         {
+            /* should we override the include path? */
+            case 'I':
+                include_path = optarg;
+                break;
+
             /* should we list all file sections? */
             case 'L':
                 opt_list_files = true;
@@ -73,11 +81,11 @@ int main(int argc, char* argv[])
     /* should we list files? */
     if (opt_list_files)
     {
-        return list_files(argv[0]);
+        return list_files(argv[0], include_path);
     }
 
     /* run the tangle command. */
-    return tangle(argv[0], output_file, root);
+    return tangle(argv[0], output_file, root, include_path);
 }
 
 typedef function<string ()> eval_fn;
@@ -86,7 +94,7 @@ typedef map<string, pair<int, shared_ptr<macro>>> macro_map;
 
 static int tangle(
     const string& input, shared_ptr<string> output_file,
-    shared_ptr<string> root)
+    shared_ptr<string> root, const string& include_path)
 {
     /* open the input file. */
     ifstream in(input);
@@ -118,6 +126,8 @@ static int tangle(
              << endl;
     }
 
+    shared_ptr<processor> p;
+    stack<shared_ptr<pair<shared_ptr<ifstream>, string>>> input_stack;
     shared_ptr<macro> current_macro;
     macro_map macros;
     int macro_node = 0;
@@ -180,15 +190,22 @@ static int tangle(
         });
     };
 
+    /* handle includes. */
+    auto special_directive_callback =
+        include_processor_callback(
+            &p, include_path, input_stack,
+            [&](const pair<directive_type, string>& d) { });
+
     /* run the processor. */
     try
     {
-        processor p(&in, input);
-        p.register_passthrough_callback(passthrough_callback);
-        p.register_macro_begin_callback(macro_begin_callback);
-        p.register_macro_end_callback(macro_end_callback);
-        p.register_macro_ref_callback(macro_ref_callback);
-        p.run();
+        p = make_shared<processor>(&in, input);
+        p->register_passthrough_callback(passthrough_callback);
+        p->register_macro_begin_callback(macro_begin_callback);
+        p->register_macro_end_callback(macro_end_callback);
+        p->register_macro_ref_callback(macro_ref_callback);
+        p->register_special_directive_callback(special_directive_callback);
+        p->run();
     }
     catch (processor_error& e)
     {
@@ -222,7 +239,7 @@ static int tangle(
 }
 
 static int list_files(
-    const string& input)
+    const string& input, const string& include_path)
 {
     /* open the input file. */
     ifstream in(input);
@@ -234,6 +251,8 @@ static int list_files(
 
     /* "globals" for the callbacks. */
     set<string> file_sections;
+    shared_ptr<processor> p;
+    stack<shared_ptr<pair<shared_ptr<ifstream>, string>>> input_stack;
 
     /* handle macro begin. */
     auto macro_begin_callback = [&](const pair<macro_type, string>& m) {
@@ -243,12 +262,19 @@ static int list_files(
         }
     };
 
+    /* handle includes. */
+    auto special_directive_callback =
+        include_processor_callback(
+            &p, include_path, input_stack,
+            [&](const pair<directive_type, string>& d) { });
+
     /* run the processor. */
     try
     {
-        processor p(&in, input);
-        p.register_macro_begin_callback(macro_begin_callback);
-        p.run();
+        p = make_shared<processor>(&in, input);
+        p->register_macro_begin_callback(macro_begin_callback);
+        p->register_special_directive_callback(special_directive_callback);
+        p->run();
     }
     catch (processor_error& e)
     {
