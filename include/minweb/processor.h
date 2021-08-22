@@ -13,7 +13,9 @@
 # error This file requires C++14 or greater.
 #endif
 
+#include <memory>
 #include <minweb/lexer.h>
+#include <stack>
 
 namespace minweb {
 
@@ -27,6 +29,30 @@ public:
         : runtime_error(what)
     {
     }
+};
+
+/**
+ * \brief Saved input type for the processor.
+ */
+struct processor_saved_input
+{
+public:
+    processor_saved_input(
+        std::istream* _input, const std::string& _name, int _line, int _col,
+        const std::list<int>& _putback)
+            : input(_input)
+            , name(_name)
+            , line(_line)
+            , col(_col)
+            , putback(_putback)
+    {
+    }
+
+    std::istream* input;
+    std::string name;
+    int line;
+    int col;
+    std::list<int> putback;
 };
 
 /**
@@ -96,6 +122,19 @@ public:
      */
     void run();
 
+    /**
+     * \brief Push the current input stream and name onto the processing stream
+     * stack, and immediately start processing this input stream until EOF or
+     * until it is pushed onto the stack.  On EOF, the previous input stream is
+     * popped from the stack.
+     *
+     * This is used by the include special directive.
+     *
+     * \param input     The input stream to start processing.
+     * \param name      The name of the input stream.
+     */
+    void include_stream(std::istream* input, const std::string& name);
+
 private:
     lexer in;
 
@@ -118,6 +157,8 @@ private:
     std::function<
         void (const std::pair<directive_type, std::string>&)>
     special_directive_callback;
+
+    std::stack<std::shared_ptr<processor_saved_input>> input_stack;
 };
 
 } /* namespace minweb */
