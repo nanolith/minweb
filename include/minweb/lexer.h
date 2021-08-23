@@ -5,8 +5,6 @@
  *
  * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
-#ifndef  MINWEB_LEXER_HEADER_GUARD
-# define MINWEB_LEXER_HEADER_GUARD
 
 /** C++ version check. */
 #if !defined(__cplusplus) || __cplusplus < 201402L
@@ -26,19 +24,19 @@ namespace minweb {
  */
 enum token
 {
-    /* end of input. */
+    /** \brief end of input. */
     MINWEB_TOKEN_EOF,
-    /* the start of a macro. */
+    /** \brief the start of a macro. */
     MINWEB_TOKEN_MACRO_START,
-    /* the end of a macro. */
+    /** \brief the end of a macro. */
     MINWEB_TOKEN_MACRO_END,
-    /* A macro reference. */
+    /** \brief A macro reference. */
     MINWEB_TOKEN_MACRO_REF,
-    /* a pass-through character. */
+    /** \brief a pass-through character. */
     MINWEB_TOKEN_PASSTHROUGH,
-    /* A text substitution. */
+    /** \brief A text substitution. */
     MINWEB_TOKEN_TEXT_SUBSTITUTION,
-    /* A special directive. */
+    /** \brief A special directive. */
     MINWEB_TOKEN_SPECIAL_DIRECTIVE,
 };
 
@@ -73,9 +71,9 @@ enum substitution_type
  */
 enum directive_type
 {
-    /* \brief An include directive. */
+    /** \brief An include directive. */
     MINWEB_DIRECTIVE_TYPE_INCLUDE,
-    /* \brief A language directive. */
+    /** \brief A language directive. */
     MINWEB_DIRECTIVE_TYPE_LANGUAGE,
 };
 
@@ -85,6 +83,12 @@ enum directive_type
 class lexer_error : public std::runtime_error
 {
 public:
+
+    /**
+     * \brief Construct a lexer_error from an error string.
+     *
+     * \param what      A description of the error.
+     */
     lexer_error(const std::string& what)
         : runtime_error(what)
     {
@@ -235,21 +239,61 @@ private:
     int end_line;
     int end_col;
 
+    /**
+     * \brief Read a character from the input stream or the putback buffer.
+     *
+     * \returns the character read.
+     */
     int read_char();
+
+    /**
+     * \brief Start a token.
+     *
+     * \param ch        The first character of the token.
+     */
     void start(int ch);
+
+    /**
+     * \brief Accept a character into the current token value.
+     *
+     * \param ch        The character to accept.
+     */
     void accept(int ch);
+
+    /**
+     * \brief Put a character back into the stream.
+     *
+     * \param ch        The character to put back.
+     */
     void put_back(int ch);
 
-    token matchSequence(
-        const std::string& seq, std::function<token ()> onAccept,
-        std::function<token ()> onFail);
-
+    /**
+     * \brief Try to read a macro end token.
+     *
+     * \returns the token value read.
+     */
     token maybeReadMacroEnd();
+
+    /**
+     * \brief Try to read a macro start token.
+     *
+     * \returns the token value read.
+     */
     token maybeReadMacroStart();
+
+    /**
+     * \brief Try to read a text substitution token.
+     *
+     * \returns the token value read.
+     */
     token maybeReadTextSubstitution();
+
+    /**
+     * \brief Try to read a special directive token.
+     *
+     * \returns the token value read.
+     */
     token maybeReadSpecialDirective();
 };
 
 } /* namespace minweb */
-
-#endif /*MINWEB_LEXER_HEADER_GUARD*/

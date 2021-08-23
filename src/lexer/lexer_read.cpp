@@ -3,7 +3,7 @@
  *
  * \brief Read a token.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 #include <istream>
 #include <minweb/lexer.h>
@@ -48,6 +48,11 @@ token minweb::lexer::read()
     }
 }
 
+/**
+ * \brief Try to read a macro end token.
+ *
+ * \returns the token value read.
+ */
 token minweb::lexer::maybeReadMacroEnd()
 {
     /* match a second gt. */
@@ -84,6 +89,11 @@ fail:
     return MINWEB_TOKEN_PASSTHROUGH;
 }
 
+/**
+ * \brief Try to read a macro start token.
+ *
+ * \returns the token value read.
+ */
 token minweb::lexer::maybeReadMacroStart()
 {
     /* match a second lt. */
@@ -144,6 +154,11 @@ fail:
     return MINWEB_TOKEN_PASSTHROUGH;
 }
 
+/**
+ * \brief Try to read a text substitution token.
+ *
+ * \returns the token value read.
+ */
 token minweb::lexer::maybeReadTextSubstitution()
 {
     /* match an open bracket. */
@@ -191,6 +206,11 @@ fail:
     return MINWEB_TOKEN_PASSTHROUGH;
 }
 
+/**
+ * \brief Try to read a special directive token.
+ *
+ * \returns the token value read.
+ */
 token minweb::lexer::maybeReadSpecialDirective()
 {
     /* match an open bracket. */

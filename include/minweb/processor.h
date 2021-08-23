@@ -5,8 +5,7 @@
  *
  * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
-#ifndef  MINWEB_PROCESSOR_HEADER_GUARD
-# define MINWEB_PROCESSOR_HEADER_GUARD
+#pragma once
 
 /** C++ version check. */
 #if !defined(__cplusplus) || __cplusplus < 201402L
@@ -25,6 +24,12 @@ namespace minweb {
 class processor_error : public std::runtime_error
 {
 public:
+
+    /**
+     * \brief Construct this processor_error from an error string.
+     *
+     * \param what      The string describing this error.
+     */
     processor_error(const std::string& what)
         : runtime_error(what)
     {
@@ -37,6 +42,16 @@ public:
 struct processor_saved_input
 {
 public:
+
+    /**
+     * \brief Construct this saved input structure.
+     *
+     * \param _input        The input stream.
+     * \param _name         The name of this input stream.
+     * \param _line         The current line processed in this input stream.
+     * \param _col          The current column processed in this input stream.
+     * \param _putback      The current putback buffer for this input stream.
+     */
     processor_saved_input(
         std::istream* _input, const std::string& _name, int _line, int _col,
         const std::list<int>& _putback)
@@ -162,5 +177,3 @@ private:
 };
 
 } /* namespace minweb */
-
-#endif /*MINWEB_PROCESSOR_HEADER_GUARD*/

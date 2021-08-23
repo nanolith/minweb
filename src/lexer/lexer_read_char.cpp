@@ -3,7 +3,7 @@
  *
  * \brief Read a character from the input stream and adjust lines / cols.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 #include <istream>
 #include <minweb/lexer.h>
@@ -11,6 +11,11 @@
 using namespace minweb;
 using namespace std;
 
+/**
+ * \brief Read a character from the input stream or the putback buffer.
+ *
+ * \returns the character read.
+ */
 int minweb::lexer::read_char()
 {
     int ch;

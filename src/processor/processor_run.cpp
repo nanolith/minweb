@@ -27,12 +27,16 @@ void minweb::processor::run()
 
     do
     {
+        /* get the next token and the line / column information for this
+         * token. */
         tok = in.read();
         in.read_linecol(name, line, col, endline, endcol);
 
         switch (tok)
         {
+            /* Handle end of input. */
             case MINWEB_TOKEN_EOF:
+                /* It's an error to end the file in the middle of a macro. */
                 if (in_macro)
                 {
                     failout << "Error in " << name << " at "
@@ -41,6 +45,7 @@ void minweb::processor::run()
 
                     throw processor_error(failout.str());
                 }
+                /* if we are recursing on includes, pop the stack. */
                 else if (input_stack.size() > 0)
                 {
                     /* restore the previous stream. */
@@ -55,7 +60,9 @@ void minweb::processor::run()
                 }
                 break;
 
+            /* handle a macro start. */
             case MINWEB_TOKEN_MACRO_START:
+                /* Nesting macros is illegal. */
                 if (in_macro)
                 {
                     failout << "Error in " << name << " at "
@@ -65,6 +72,7 @@ void minweb::processor::run()
                     throw processor_error(failout.str());
                 }
 
+                /* let the callback know we've entered a macro. */
                 in_macro = true;
                 if (!!macro_begin_callback)
                 {
@@ -74,7 +82,9 @@ void minweb::processor::run()
                 }
                 break;
 
+            /* handle a macro end. */
             case MINWEB_TOKEN_MACRO_END:
+                /* It's illegal to end a macro unless we are in a macro. */
                 if (!in_macro)
                 {
                     failout << "Error in " << name << " at "
@@ -84,6 +94,7 @@ void minweb::processor::run()
                     throw processor_error(failout.str());
                 }
 
+                /* let the callback know we've left a macro. */
                 in_macro = false;
                 if (!!macro_end_callback)
                 {
@@ -91,7 +102,9 @@ void minweb::processor::run()
                 }
                 break;
 
+            /* handle a macro reference. */
             case MINWEB_TOKEN_MACRO_REF:
+                /* it's illegal to have a macro reference outside of a macro. */
                 if (!in_macro)
                 {
                     failout << "Error in " << name << " at "
@@ -102,6 +115,7 @@ void minweb::processor::run()
                     throw processor_error(failout.str());
                 }
 
+                /* let the callback know we've encountered a macro reference. */
                 if (!!macro_ref_callback)
                 {
                     macro_ref_callback(
@@ -109,7 +123,9 @@ void minweb::processor::run()
                 }
                 break;
 
+            /* handle a text substitution. */
             case MINWEB_TOKEN_TEXT_SUBSTITUTION:
+                /* let the callback know we've encountered a text sub. */
                 if (!!text_substitution_callback)
                 {
                     text_substitution_callback(
@@ -118,19 +134,24 @@ void minweb::processor::run()
                 }
                 break;
 
+            /* handle passthrough data. */
             case MINWEB_TOKEN_PASSTHROUGH:
+                /* let the callback know we've encountered passthrough data. */
                 if (!!passthrough_callback)
                 {
                     passthrough_callback(in.get_token_string());
                 }
                 break;
 
+            /* handle a special directive. */
             case MINWEB_TOKEN_SPECIAL_DIRECTIVE:
                 try
                 {
+                    /* decode the directive. */
                     auto decoded_directive =
                         lexer::decode_special_directive(in.get_token_string());
 
+                    /* let the callback know we've encountered a directive. */
                     if (!!special_directive_callback)
                     {
                         special_directive_callback(decoded_directive);
@@ -142,6 +163,7 @@ void minweb::processor::run()
                 }
                 break;
 
+            /* the lexer has given us a token we don't know. */
             default:
                 throw processor_error("Unexpect token type encountered.");
         }

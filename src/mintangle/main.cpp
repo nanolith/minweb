@@ -20,12 +20,21 @@ using namespace minweb;
 using namespace utilities;
 using namespace std;
 
+/* forward declarations. */
 static int tangle(
     const string& input, shared_ptr<string> output_file,
     shared_ptr<string> root, const string& include_path);
 static int list_files(
     const string& input, const string& include_path);
 
+/**
+ * \brief Main entry point for the mintangle tool.
+ *
+ * \param argc      The number of command-line arguments.
+ * \param argv      The command-line arguments.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
 int main(int argc, char* argv[])
 {
     bool opt_list_files = false;
@@ -88,10 +97,27 @@ int main(int argc, char* argv[])
     return tangle(argv[0], output_file, root, include_path);
 }
 
+/** \brief An evaluation function for interpreting input. */
 typedef function<string ()> eval_fn;
+
+/** \brief A list of evaluation functions form a macro. */
 typedef list<eval_fn> macro;
+
+/** \brief A mapping of macro name to macro. */
 typedef map<string, pair<int, shared_ptr<macro>>> macro_map;
 
+/**
+ * \brief Perform the "tangle" operation.
+ *
+ * \param input         The name of the input file for the tangle.
+ * \param output_file   The optional output filename override.
+ * \param root          The optional root node to act as a starting point for 
+ *                      creating the output file.
+ * \param include_path  The include path to use when resolving include
+ *                      statements.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
 static int tangle(
     const string& input, shared_ptr<string> output_file,
     shared_ptr<string> root, const string& include_path)
@@ -126,6 +152,7 @@ static int tangle(
              << endl;
     }
 
+    /* the "globals" for the processor callbacks. */
     shared_ptr<processor> p;
     stack<shared_ptr<pair<shared_ptr<ifstream>, string>>> input_stack;
     shared_ptr<macro> current_macro;
@@ -134,8 +161,10 @@ static int tangle(
 
     /* handle passthrough data. */
     auto passthrough_callback = [&](const string& s) {
+        /* ignore the value unless we are in a macro. */
         if (!!current_macro)
         {
+            /* Wrap the value in a functor space for the macro mapping. */
             current_macro->push_back([=]() -> string {
                 return s;
             });
@@ -155,37 +184,45 @@ static int tangle(
                         make_pair(macros.size()+1, make_shared<macro>())));
         }
 
+        /* set this macro as our current macro. */
         current_macro = f->second.second;
         macro_node = f->second.first;
     };
 
     /* handle macro end. */
     auto macro_end_callback = [&]() {
-        macro_node = 0;
+        /* release the current macro reference. */
         current_macro.reset();
+        macro_node = 0;
     };
 
     /* add a macro reference. */
     auto macro_ref_callback = [&](const string& mn) {
+        /* if we aren't in a macro, we don't need to resolve the reference. */
         if (!current_macro)
             return;
 
-        /* add a lambda for resolving this macro. */
+        /* add a lambda for resolving this macro, raising this macro to the
+         * functor space for the current macro. */
         current_macro->push_back([=,&macros]() -> string {
             stringstream ss;
             auto ff = macros.find(mn);
             if (ff == macros.end())
             {
+                /* if the macro definition is not available, keep it as a
+                 * reference. */
                 ss << "<<" << mn << ">>";
             }
             else
             {
+                /* otherwise, evaluate the macro in the current space. */
                 for (auto i : *ff->second.second)
                 {
                     ss << i();
                 }
             }
 
+            /* return the evaluated macro. */
             return ss.str();
         });
     };
@@ -199,12 +236,17 @@ static int tangle(
     /* run the processor. */
     try
     {
+        /* create the processor. */
         p = make_shared<processor>(&in, input);
+
+        /* add the tangle callbacks. */
         p->register_passthrough_callback(passthrough_callback);
         p->register_macro_begin_callback(macro_begin_callback);
         p->register_macro_end_callback(macro_end_callback);
         p->register_macro_ref_callback(macro_ref_callback);
         p->register_special_directive_callback(special_directive_callback);
+
+        /* run the processor over the input file. */
         p->run();
     }
     catch (processor_error& e)
@@ -238,6 +280,15 @@ static int tangle(
     return 0;
 }
 
+/**
+ * \brief List all of the files available to extract in the input file.
+ *
+ * \param input         The input filename to scan.
+ * \param include_path  The include path to use when resolving include
+ *                      statements.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
 static int list_files(
     const string& input, const string& include_path)
 {
@@ -256,8 +307,10 @@ static int list_files(
 
     /* handle macro begin. */
     auto macro_begin_callback = [&](const pair<macro_type, string>& m) {
+        /* if this is a file-type macro... */
         if (MINWEB_MACRO_TYPE_FILE == m.first)
         {
+            /* add this to the set of available files. */
             file_sections.insert(m.second);
         }
     };
@@ -271,9 +324,14 @@ static int list_files(
     /* run the processor. */
     try
     {
+        /* create the processor instance. */
         p = make_shared<processor>(&in, input);
+
+        /* register list specific processor callbacks. */
         p->register_macro_begin_callback(macro_begin_callback);
         p->register_special_directive_callback(special_directive_callback);
+
+        /* run the processor over the input file. */
         p->run();
     }
     catch (processor_error& e)
