@@ -19,12 +19,21 @@ using namespace minweb;
 using namespace utilities;
 using namespace std;
 
+/* forward declarations. */
 static int weave(
     const string& input, const string& include_path,
     shared_ptr<string> output_file,
     shared_ptr<string> source_language,
     shared_ptr<string> document_template);
 
+/**
+ * \brief Main entry point for the minweave tool.
+ *
+ * \param argc      The number of command-line arguments.
+ * \param argv      The command-line arguments.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
 int main(int argc, char* argv[])
 {
     int ch;
@@ -84,11 +93,31 @@ int main(int argc, char* argv[])
             document_template);
 }
 
+/** \brief The map of macros. */
 typedef map<string, shared_ptr<stringstream>> macro_map;
+
+/** \brief The map of settings. */
 typedef map<string, string> setting_map;
+
+/** \brief The map of sections. */
 typedef map<string, shared_ptr<setting_map>> section_map;
+
+/** \brief The map of variables. */
 typedef map<string, string> variable_map;
 
+/**
+ * \brief Perform the "weave" operation.
+ *
+ * \param input             The name of the input file for weave.
+ * \param include_path      The include path to use when resolving include
+ *                          statements.
+ * \param output_file       The optional output filename override.
+ * \param source_language   The optional default source language override.
+ * \param document_template The optional document template file to use to build
+ *                          the final document.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
 static int weave(
     const string& input, const string& include_path,
     shared_ptr<string> output_file,
@@ -159,12 +188,16 @@ static int weave(
     stack<shared_ptr<pair<shared_ptr<ifstream>, string>>> input_stack;
     shared_ptr<string> language_override;
 
+    /* possible holder for the preamble. */
     auto template_preamble_stream = make_shared<stringstream>();
 
+    /* if we are using a document template, write the preamble to our preamble
+     * stream. */
     if (!!document_template)
     {
         preamble_out = template_preamble_stream.get();
     }
+    /* otherwise, write it to output. */
     else
     {
         preamble_out = out;
@@ -176,6 +209,7 @@ static int weave(
                     << "    escapeinside={(*@}{@*)}";
     if (!!source_language)
     {
+        /* set the default source language. */
         (*preamble_out) << "," << endl;
         (*preamble_out) << "    language=" << *source_language << endl;
     }
@@ -211,6 +245,7 @@ static int weave(
         macro_name = m.second;
         current_macro_type = m.first;
 
+        /* if this is a section, then scan an output file for variable values */
         if (MINWEB_MACRO_TYPE_SECTION == current_macro_type)
         {
             auto fname = m.second + ".output";

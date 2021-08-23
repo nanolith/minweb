@@ -19,13 +19,21 @@ using namespace minweb;
 using namespace utilities;
 using namespace std;
 
+/* forward declarations. */
 static int list_sections(
     const string& input, const string& include_path);
-
 static int extract(
     const string& input, const string& include_path,
     shared_ptr<string> output_file, shared_ptr<string> section_name);
 
+/**
+ * \brief Main entry point for the minextract tool.
+ *
+ * \param argc      The number of command-line arguments.
+ * \param argv      The command-line arguments.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
 int main(int argc, char* argv[])
 {
     int ch;
@@ -93,6 +101,14 @@ int main(int argc, char* argv[])
     return extract(argv[0], include_path, output_file, section_name);
 }
 
+/**
+ * \brief List the sections available for extract.
+ *
+ * \param input         The input filename.
+ * \param include_path  The path to use to resolve includes.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
 static int list_sections(
     const string& input, const string& include_path)
 {
@@ -141,6 +157,17 @@ static int list_sections(
     return 0;
 }
 
+/**
+ * \brief Perform the "extract" operation.
+ *
+ * \param input         The name of the input file for the extract.
+ * \param include_path  The include path to use when resolving include
+ *                      statements.
+ * \param output_file   The optional output filename override.
+ * \param section_name  The name of the section to extract.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
 static int extract(
     const string& input, const string& include_path,
     shared_ptr<string> output_file, shared_ptr<string> section_name)
