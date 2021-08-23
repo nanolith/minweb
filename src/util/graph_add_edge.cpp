@@ -3,13 +3,19 @@
  *
  * \brief Add an edge to the graph.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 #include <minweb/graph.h>
 
 using namespace minweb;
 using namespace std;
 
+/**
+ * \brief Add an edge to the graph.
+ *
+ * \param node      The "from" node that this edge is connecting.
+ * \param toNode    The "to" node that this edge is connecting.
+ */
 void minweb::graph::add_edge(int node, int toNode)
 {
     /* does node exist? */

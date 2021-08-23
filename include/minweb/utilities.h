@@ -5,8 +5,7 @@
  *
  * \copyright Copyright 2021 Justin Handville. All rights reserved.
  */
-#ifndef  MINWEB_UTILITIES_HEADER_GUARD
-# define MINWEB_UTILITIES_HEADER_GUARD
+#pragma once
 
 /** C++ version check. */
 #if !defined(__cplusplus) || __cplusplus < 201402L
@@ -50,5 +49,3 @@ namespace minweb {
     
     } /* namespace utilities */
 } /* namespace minweb */
-
-#endif /*MINWEB_UTILITIES_HEADER_GUARD*/

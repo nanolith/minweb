@@ -4,7 +4,7 @@
  * \brief Perform a topological sort on the graph, returning nodes sorted in
  * order of dependency.
  *
- * \copyright Copyright 2020 Justin Handville. All rights reserved.
+ * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 #include <minweb/graph.h>
 
@@ -12,7 +12,15 @@ using namespace minweb;
 using namespace std;
 
 /**
- * Quick and dirty variation of Kahn's Algorithm for topological sorting.
+ * \brief Sort the nodes of this graph in dependency order, so that the
+ * output list contains a sequence in which node dependencies are
+ * visited before nodes with these dependencies, using a quick and dirty
+ * variation of Kahn's Algorithm.
+ *
+ * \param output_list       The list to receive the nodes to visit in
+ *                          order.
+ *
+ * \throws cycle_error if a cycle is found in the graph.
  */
 void minweb::graph::topological_sort(std::list<int>& output_list) const
 {
