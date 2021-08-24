@@ -6,14 +6,17 @@
  * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 
+#include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <libgen.h>
 #include <map>
 #include <memory>
 #include <minweb/processor.h>
 #include <minweb/utilities.h>
 #include <set>
 #include <sstream>
+#include <sys/stat.h>
 #include <unistd.h>
 
 using namespace minweb;
@@ -26,6 +29,8 @@ static int tangle(
     shared_ptr<string> root, const string& include_path);
 static int list_files(
     const string& input, const string& include_path);
+static int create_directories(const string& pathname);
+static shared_ptr<list<string>> get_directories(const string& pathname);
 
 /**
  * \brief Main entry point for the mintangle tool.
@@ -122,6 +127,8 @@ static int tangle(
     const string& input, shared_ptr<string> output_file,
     shared_ptr<string> root, const string& include_path)
 {
+    int retval;
+
     /* open the input file. */
     ifstream in(input);
     if (!in.good())
@@ -140,6 +147,13 @@ static int tangle(
         cerr << "Error: either the output file or an alternative root "
              << "must be specified." << endl;
         return 1;
+    }
+
+    /* get the directory part of the path, split into pieces. */
+    retval = create_directories(*output_file);
+    if (0 != retval)
+    {
+        return retval;
     }
 
     cerr << "Writing to output '" << *output_file << "'" << endl;
@@ -347,4 +361,78 @@ static int list_files(
     }
 
     return 0;
+}
+
+/**
+ * \brief Create the directories for pathname if they don't already exist.
+ *
+ * \param pathname      The pathname for which directories should be created.
+ *
+ * \returns zero on success and non-zero on failure.
+ */
+static int create_directories(const string& pathname)
+{
+    auto dirs = get_directories(pathname);
+    if (dirs->size() > 0)
+    {
+        struct stat st;
+        string curpath = ".";
+
+        /* iterate over each directory. */
+        for (auto dir : *dirs)
+        {
+            curpath += string("/") + dir;
+
+            /* stat the directory. */
+            if (stat(curpath.c_str(), &st) < 0)
+            {
+                /* if it does not exist... */
+                if (errno == ENOENT)
+                {
+                    /* create it. */
+                    if (mkdir(curpath.c_str(), 0777) < 0)
+                    {
+                        perror("mkdir");
+                        return 1;
+                    }
+                }
+                /* if any other error occurs, display it. */
+                else
+                {
+                    perror("stat");
+                    return 1;
+                }
+            }
+            /* if the file is not a directory... */
+            else if (!(S_IFDIR & st.st_mode))
+            {
+                cerr << "Error: " << curpath << " is not a directory." << endl;
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * \brief Get the directories associated with a pathname.
+ *
+ * \param pathname      The pathname to decode.
+ *
+ * \returns the list of directories for the pathname.
+ */
+static shared_ptr<list<string>> get_directories(const string& pathname)
+{
+    char* dirpart = dirname(pathname.c_str());
+    stringstream dirin(dirpart);
+    string dir;
+    auto ret = make_shared<list<string>>();
+
+    while (getline(dirin, dir, '/'))
+    {
+        ret->push_back(dir);
+    }
+
+    return ret;
 }
