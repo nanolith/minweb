@@ -1,0 +1,3 @@
+#pragma once
+
+#cmakedefine MINWEB_VERSION "@MINWEB_VERSION@"
