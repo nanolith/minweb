@@ -9,6 +9,7 @@
 #include <fstream>
 #include <minweb/utilities.h>
 #include <sstream>
+#include <sys/stat.h>
 
 using namespace minweb;
 using namespace std;
@@ -23,7 +24,8 @@ using namespace std;
  *
  * \param p             Reference to the shared pointer populated later
  *                      with the processor instance.
- * \param include_path  The path to prepend to include file references.
+ * \param includes      The list of include paths to try when searching
+ *                      for a particular include.
  * \param input_stack   The stack of include files.
  * \param prev          The previous special directive callback. This
  *                      will be called after this callback completes.
@@ -33,7 +35,7 @@ using namespace std;
 function<
     void (const pair<directive_type, string>&)>
 minweb::utilities::include_processor_callback(
-    shared_ptr<processor>* p, const string& include_path,
+    shared_ptr<processor>* p, const list<string>& includes,
     stack<shared_ptr<pair<shared_ptr<ifstream>, string>>>& input_stack,
     function<void (const pair<directive_type, string>&)> prev)
 {
@@ -41,27 +43,41 @@ minweb::utilities::include_processor_callback(
         [=,&input_stack](const pair<directive_type, string>& d) {
             if (MINWEB_DIRECTIVE_TYPE_INCLUDE == d.first)
             {
-                /* open the include file for reading. */
-                string pathname = include_path + "/" + d.second;
-                auto stream = make_shared<ifstream>(pathname);
-                if (!stream->good())
+                bool found_include = false;
+
+                for (auto include_path : includes)
                 {
-                    stringstream error_out;
-                    error_out << "error: could not open '" << pathname
-                              << "' for reading.";
+                    struct stat st;
 
-                    throw processor_error(error_out.str());
+                    /* compute the pathname. */
+                    string pathname = include_path + "/" + d.second;
+                    /* try to stat this file. */
+                    if (0 == stat(pathname.c_str(), &st))
+                    {
+                        /* open the include file for reading. */
+                        auto stream = make_shared<ifstream>(pathname);
+                        if (!stream->good())
+                        {
+                            stringstream error_out;
+                            error_out << "error: could not open '" << pathname
+                                      << "' for reading.";
+
+                            throw processor_error(error_out.str());
+                        }
+
+                        found_include = true;
+
+                        /* extend the scope of this stream so it is cleaned up
+                         * after the processor finishes. */
+                        input_stack.push(
+                            make_shared<pair<shared_ptr<ifstream>, string>>(
+                                stream, pathname));
+
+                        /* Instruct the processor to start processing this
+                         * stream. */
+                        (*p)->include_stream(stream.get(), pathname);
+                    }
                 }
-
-                /* extend the scope of this stream so it is cleaned up after the 
-                 * processor finishes.
-                 */
-                input_stack.push(
-                    make_shared<pair<shared_ptr<ifstream>, string>>(
-                        stream, pathname));
-
-                /* Instruct the processor to start processing this stream. */
-                (*p)->include_stream(stream.get(), pathname);
             }
 
             if (!!prev)

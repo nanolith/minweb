@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <libgen.h>
 #include <map>
 #include <memory>
 #include <minweb/processor.h>
@@ -21,7 +22,7 @@ using namespace std;
 
 /* forward declarations. */
 static int weave(
-    const string& input, const string& include_path,
+    const string& input, const list<string>& includes,
     shared_ptr<string> output_file,
     shared_ptr<string> source_language,
     shared_ptr<string> document_template);
@@ -40,7 +41,7 @@ int main(int argc, char* argv[])
     shared_ptr<string> output_file;
     shared_ptr<string> source_language;
     shared_ptr<string> document_template;
-    string include_path(".");
+    list<string> includes;
 
     /* reset the option indicator. */
     optind = 0;
@@ -55,7 +56,7 @@ int main(int argc, char* argv[])
         {
             /* specify include path. */
             case 'I':
-                include_path = optarg;
+                includes.push_back(optarg);
                 break;
 
             /* specify the output file. */
@@ -86,10 +87,23 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    /* compute the directory name of the file. */
+    const char* filedirname = dirname(argv[0]);
+    if (nullptr == filedirname)
+    {
+        cerr << "error: could not get the directory name of " << argv[0]
+             << endl;
+        return 1;
+    }
+    else
+    {
+        includes.push_front(filedirname);
+    }
+
     /* run the weave command. */
     return
         weave(
-            argv[0], include_path, output_file, source_language,
+            argv[0], includes, output_file, source_language,
             document_template);
 }
 
@@ -109,7 +123,7 @@ typedef map<string, string> variable_map;
  * \brief Perform the "weave" operation.
  *
  * \param input             The name of the input file for weave.
- * \param include_path      The include path to use when resolving include
+ * \param includes          The include path to use when resolving include
  *                          statements.
  * \param output_file       The optional output filename override.
  * \param source_language   The optional default source language override.
@@ -119,7 +133,7 @@ typedef map<string, string> variable_map;
  * \returns zero on success and non-zero on failure.
  */
 static int weave(
-    const string& input, const string& include_path,
+    const string& input, const list<string>& includes,
     shared_ptr<string> output_file,
     shared_ptr<string> source_language,
     shared_ptr<string> document_template)
@@ -153,7 +167,16 @@ static int weave(
      * name. */
     if (!output_file)
     {
-        output_file = make_shared<string>(input + ".tex");
+        string output_name = input + ".tex";
+        const char* basefilename = basename(output_name.c_str());
+        if (nullptr == basefilename)
+        {
+            cerr << "Could not compute the base filename of " << output_name
+                 << endl;
+            return 1;
+        }
+
+        output_file = make_shared<string>(basefilename);
     }
 
     cerr << "Writing to output '" << *output_file << "'" << endl;
@@ -349,7 +372,7 @@ static int weave(
     /* handle includes. */
     auto special_directive_callback =
         include_processor_callback(
-            &p, include_path, input_stack, language_override_callback);
+            &p, includes, input_stack, language_override_callback);
 
     /* run the processor. */
     try
