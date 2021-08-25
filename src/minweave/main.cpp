@@ -6,6 +6,7 @@
  * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 
+#include <config.h>
 #include <fstream>
 #include <iostream>
 #include <libgen.h>
@@ -50,7 +51,7 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "I:o:L:T:")) != -1)
+    while ((ch = getopt(argc, argv, "I:o:L:T:v")) != -1)
     {
         switch (ch)
         {
@@ -73,6 +74,11 @@ int main(int argc, char* argv[])
             case 'T':
                 document_template = make_shared<string>(optarg);
                 break;
+
+            /* output the version number. */
+            case 'v':
+                cout << "minweave version " << MINWEB_VERSION << endl;
+                return 0;
         }
     }
 

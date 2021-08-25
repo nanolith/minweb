@@ -6,6 +6,7 @@
  * \copyright Copyright 2020-2021 Justin Handville. All rights reserved.
  */
 
+#include <config.h>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -55,7 +56,7 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "I:Lo:r:")) != -1)
+    while ((ch = getopt(argc, argv, "I:Lo:r:v")) != -1)
     {
         switch (ch)
         {
@@ -78,6 +79,11 @@ int main(int argc, char* argv[])
             case 'r':
                 root = make_shared<string>(optarg);
                 break;
+
+            /* output the version number. */
+            case 'v':
+                cout << "mintangle version " << MINWEB_VERSION << endl;
+                return 0;
         }
     }
 

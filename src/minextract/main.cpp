@@ -6,6 +6,7 @@
  * \copyright Copyright 2021 Justin Handville. All rights reserved.
  */
 
+#include <config.h>
 #include <fstream>
 #include <iostream>
 #include <libgen.h>
@@ -51,7 +52,7 @@ int main(int argc, char* argv[])
 #endif
 
     /* parse command-line options. */
-    while ((ch = getopt(argc, argv, "I:Lo:S:")) != -1)
+    while ((ch = getopt(argc, argv, "I:Lo:S:v")) != -1)
     {
         switch (ch)
         {
@@ -65,13 +66,20 @@ int main(int argc, char* argv[])
                 output_file = make_shared<string>(optarg);
                 break;
 
+            /* set the section name. */
             case 'S':
                 section_name = make_shared<string>(optarg);
                 break;
 
+            /* list all sections. */
             case 'L':
                 call_list_sections = true;
                 break;
+
+            /* output the version number. */
+            case 'v':
+                cout << "minextract version " << MINWEB_VERSION << endl;
+                return 0;
         }
     }
 
