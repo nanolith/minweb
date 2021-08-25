@@ -26,9 +26,9 @@ using namespace std;
 /* forward declarations. */
 static int tangle(
     const string& input, shared_ptr<string> output_file,
-    shared_ptr<string> root, const string& include_path);
+    shared_ptr<string> root, const list<string>& includes);
 static int list_files(
-    const string& input, const string& include_path);
+    const string& input, const list<string>& includes);
 static int create_directories(const string& pathname);
 static shared_ptr<list<string>> get_directories(const string& pathname);
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 {
     bool opt_list_files = false;
     int ch;
-    string include_path(".");
+    list<string> includes;
     shared_ptr<string> output_file;
     shared_ptr<string> root;
 
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
         {
             /* should we override the include path? */
             case 'I':
-                include_path = optarg;
+                includes.push_back(optarg);
                 break;
 
             /* should we list all file sections? */
@@ -92,14 +92,27 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    /* compute the directory name of the file. */
+    const char* filedirname = dirname(argv[0]);
+    if (nullptr == filedirname)
+    {
+        cerr << "error: could not get the directory name of " << argv[0]
+             << endl;
+        return 1;
+    }
+    else
+    {
+        includes.push_front(filedirname);
+    }
+
     /* should we list files? */
     if (opt_list_files)
     {
-        return list_files(argv[0], include_path);
+        return list_files(argv[0], includes);
     }
 
     /* run the tangle command. */
-    return tangle(argv[0], output_file, root, include_path);
+    return tangle(argv[0], output_file, root, includes);
 }
 
 /** \brief An evaluation function for interpreting input. */
@@ -118,14 +131,14 @@ typedef map<string, pair<int, shared_ptr<macro>>> macro_map;
  * \param output_file   The optional output filename override.
  * \param root          The optional root node to act as a starting point for 
  *                      creating the output file.
- * \param include_path  The include path to use when resolving include
+ * \param includes      The include path to use when resolving include
  *                      statements.
  *
  * \returns zero on success and non-zero on failure.
  */
 static int tangle(
     const string& input, shared_ptr<string> output_file,
-    shared_ptr<string> root, const string& include_path)
+    shared_ptr<string> root, const list<string>& includes)
 {
     int retval;
 
@@ -244,7 +257,7 @@ static int tangle(
     /* handle includes. */
     auto special_directive_callback =
         include_processor_callback(
-            &p, include_path, input_stack,
+            &p, includes, input_stack,
             [&](const pair<directive_type, string>& d) { });
 
     /* run the processor. */
@@ -298,13 +311,13 @@ static int tangle(
  * \brief List all of the files available to extract in the input file.
  *
  * \param input         The input filename to scan.
- * \param include_path  The include path to use when resolving include
+ * \param includes      The include path to use when resolving include
  *                      statements.
  *
  * \returns zero on success and non-zero on failure.
  */
 static int list_files(
-    const string& input, const string& include_path)
+    const string& input, const list<string>& includes)
 {
     /* open the input file. */
     ifstream in(input);
@@ -332,7 +345,7 @@ static int list_files(
     /* handle includes. */
     auto special_directive_callback =
         include_processor_callback(
-            &p, include_path, input_stack,
+            &p, includes, input_stack,
             [&](const pair<directive_type, string>& d) { });
 
     /* run the processor. */

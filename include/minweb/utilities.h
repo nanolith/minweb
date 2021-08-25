@@ -28,7 +28,8 @@ namespace minweb {
          *
          * \param p             Reference to the shared pointer populated later
          *                      with the processor instance.
-         * \param include_path  The path to prepend to include file references.
+         * \param includes      The list of include paths to try when searching
+         *                      for a particular include.
          * \param input_stack   The stack of include files.
          * \param prev          The previous special directive callback. This
          *                      will be called after this callback completes.
@@ -38,7 +39,8 @@ namespace minweb {
         std::function<
             void (const std::pair<directive_type, std::string>&)>
         include_processor_callback(
-            std::shared_ptr<processor>* p, const std::string& include_path,
+            std::shared_ptr<processor>* p,
+            const std::list<std::string>& includes,
             std::stack<
                 std::shared_ptr<
                     std::pair<

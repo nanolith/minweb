@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <libgen.h>
 #include <map>
 #include <memory>
 #include <minweb/processor.h>
@@ -21,9 +22,9 @@ using namespace std;
 
 /* forward declarations. */
 static int list_sections(
-    const string& input, const string& include_path);
+    const string& input, const list<string>& includes);
 static int extract(
-    const string& input, const string& include_path,
+    const string& input, const list<string>& includes,
     shared_ptr<string> output_file, shared_ptr<string> section_name);
 
 /**
@@ -36,10 +37,11 @@ static int extract(
  */
 int main(int argc, char* argv[])
 {
+    int retval;
     int ch;
     shared_ptr<string> output_file;
     shared_ptr<string> section_name;
-    string include_path = ".";
+    list<string> includes;
     bool call_list_sections = false;
 
     /* reset the option indicator. */
@@ -55,7 +57,7 @@ int main(int argc, char* argv[])
         {
             /* override the include path. */
             case 'I':
-                include_path = optarg;
+                includes.push_back(optarg);
                 break;
 
             /* specify the output file. */
@@ -84,10 +86,23 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    /* compute the directory name of the file. */
+    const char* filedirname = dirname(argv[0]);
+    if (nullptr == filedirname)
+    {
+        cerr << "error: could not get the directory name of " << argv[0]
+             << endl;
+        return 1;
+    }
+    else
+    {
+        includes.push_front(filedirname);
+    }
+
     /* should we list all sections? */
     if (call_list_sections)
     {
-        return list_sections(argv[0], include_path);
+        return list_sections(argv[0], includes);
     }
 
     /* verify that we have a section name. */
@@ -98,19 +113,19 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    return extract(argv[0], include_path, output_file, section_name);
+    return extract(argv[0], includes, output_file, section_name);
 }
 
 /**
  * \brief List the sections available for extract.
  *
  * \param input         The input filename.
- * \param include_path  The path to use to resolve includes.
+ * \param includes      The path to use to resolve includes.
  *
  * \returns zero on success and non-zero on failure.
  */
 static int list_sections(
-    const string& input, const string& include_path)
+    const string& input, const list<string>& includes)
 {
     ostream* out = &cout;
 
@@ -137,7 +152,7 @@ static int list_sections(
     /* handle includes. */
     auto special_directive_callback =
         include_processor_callback(
-            &p, include_path, input_stack,
+            &p, includes, input_stack,
             [&](const pair<directive_type, string>& d) { });
 
     /* run the processor. */
@@ -161,7 +176,7 @@ static int list_sections(
  * \brief Perform the "extract" operation.
  *
  * \param input         The name of the input file for the extract.
- * \param include_path  The include path to use when resolving include
+ * \param includes      The include path to use when resolving include
  *                      statements.
  * \param output_file   The optional output filename override.
  * \param section_name  The name of the section to extract.
@@ -169,7 +184,7 @@ static int list_sections(
  * \returns zero on success and non-zero on failure.
  */
 static int extract(
-    const string& input, const string& include_path,
+    const string& input, const list<string>& includes,
     shared_ptr<string> output_file, shared_ptr<string> section_name)
 {
     ostream* out;
@@ -236,7 +251,7 @@ static int extract(
     /* handle includes. */
     auto special_directive_callback =
         include_processor_callback(
-            &p, include_path, input_stack,
+            &p, includes, input_stack,
             [&](const pair<directive_type, string>& d) { });
 
     /* run the processor. */
