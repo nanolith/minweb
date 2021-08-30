@@ -269,6 +269,7 @@ static int extract(
         p->register_macro_begin_callback(macro_begin_callback);
         p->register_macro_end_callback(macro_end_callback);
         p->register_text_substitution_callback(text_substitution_callback);
+        p->register_special_directive_callback(special_directive_callback);
         p->run();
     }
     catch (processor_error& e)
