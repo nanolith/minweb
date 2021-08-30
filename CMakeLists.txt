@@ -1,5 +1,5 @@
 cmake_policy(SET CMP0048 NEW)
-PROJECT(minweb VERSION 0.2)
+PROJECT(minweb VERSION 0.2.1)
 SET(SNAPSHOT FALSE)
 
 cmake_minimum_required(VERSION 3.10)
