@@ -174,7 +174,7 @@ static int weave(
     if (!output_file)
     {
         string output_name = input + ".tex";
-        const char* basefilename = basename(output_name.c_str());
+        const char* basefilename = basename((char*)output_name.c_str());
         if (nullptr == basefilename)
         {
             cerr << "Could not compute the base filename of " << output_name
