@@ -443,7 +443,7 @@ static int create_directories(const string& pathname)
  */
 static shared_ptr<list<string>> get_directories(const string& pathname)
 {
-    char* dirpart = dirname(pathname.c_str());
+    char* dirpart = dirname((char*)pathname.c_str());
     stringstream dirin(dirpart);
     string dir;
     auto ret = make_shared<list<string>>();
