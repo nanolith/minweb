@@ -115,4 +115,5 @@ Using these tools
 
 I find that it is easiest to use these tools in a separate build directory so
 that all temporary files such as section inputs / outputs or LaTeX artifacts can
-be contained outside of the source directory.
+be contained outside of the source directory. This ensures that the version
+control system does not accidentally include extracted files.
